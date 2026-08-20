@@ -14,7 +14,7 @@ const navItems = [
   { name: "Smart Import", href: "/import", icon: Inbox },
   { name: "Terminabsprachen", href: "/terminabsprachen", icon: Calendar, highlight: true },
   { name: "Disposition", href: "/planning", icon: Calendar },
-  { name: "Kunden & Auftr�ge", href: "/orders", icon: Users },
+  { name: "Kunden & Aufträge", href: "/orders", icon: Users },
   { name: "Abrechnung", href: "/billing", icon: Calculator },
 ];
 

@@ -11,6 +11,8 @@ export default function SettingsPage() {
   const [data, setData] = useState<SettingsData | null>(null);
   const [activeTab, setActiveTab] = useState<"catalog" | "sms" | "users">("catalog");
   const [loading, setLoading] = useState(true);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordModalUser, setPasswordModalUser] = useState({ id: "", name: "" });
   const [newPassword, setNewPassword] = useState("");
 
   // Local state for edits
@@ -46,14 +48,18 @@ export default function SettingsPage() {
   };
 
   
-  const handlePasswordChange = async (userId: string, userName: string) => {
-    const newPass = prompt(`Neues Passwort f�r ${userName} eingeben (mind. 5 Zeichen):`);
-    if (!newPass) return;
-    if (newPass.length < 5) return toast.error("Passwort zu kurz!");
-    
-    const res = await updatePassword(userId, newPass);
+  const handlePasswordChangeClick = (userId: string, userName: string) => {
+    setPasswordModalUser({ id: userId, name: userName });
+    setNewPassword("");
+    setPasswordModalOpen(true);
+  };
+
+  const submitPasswordChange = async () => {
+    if (newPassword.length < 5) return toast.error("Passwort zu kurz! (Mindestens 5 Zeichen)");
+    const res = await updatePassword(passwordModalUser.id, newPassword);
     if (res.success) {
-      toast.success(`Passwort f�r ${userName} erfolgreich ge�ndert!`);
+      toast.success(`Passwort f�r ${passwordModalUser.name} erfolgreich ge�ndert!`);
+      setPasswordModalOpen(false);
     } else {
       toast.error("Fehler beim �ndern.");
     }
@@ -221,7 +227,7 @@ export default function SettingsPage() {
                     <td className="px-4 py-4 text-right flex items-center justify-end gap-3">
                       <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">Aktiv</span>
                       <button 
-                        onClick={() => handlePasswordChange(user.id, user.name)}
+                        onClick={() => handlePasswordChangeClick(user.id, user.name)}
                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title="Passwort �ndern"
                       >

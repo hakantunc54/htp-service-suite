@@ -141,7 +141,7 @@ export async function GET(request: Request) {
           "Kunde Name": order.customer.customerName,
           "Kunden\nNummer": order.customer.customerNumber,
           "Kunde RufNr": order.customer.phone || order.customer.mobile,
-          "Status": (getQty("Abbruch") > 0 || getQty("KvHdF") > 0) ? "Abgebrochen" : "Erledigt",
+          "Status": (Number(getQty("Abbruch")) > 0 || Number(getQty("KvHdF")) > 0) ? "Abgebrochen" : "Erledigt",
           "Bemerkung": order.technicianRemark || "",
           "WE\nLage": order.apartmentLocation || "",
           "FTTB": getQty("FTTB"),
@@ -202,7 +202,7 @@ export async function GET(request: Request) {
           "Kunde Name": order.customer.customerName,
           "Kunden\nNummer": order.customer.customerNumber,
           "Kunde RufNr": order.customer.phone || order.customer.mobile,
-          "Status": (getQty("Abbruch") > 0 || getQty("KvHdF") > 0) ? "Abgebrochen" : "Erledigt",
+          "Status": (Number(getQty("Abbruch")) > 0 || Number(getQty("KvHdF")) > 0) ? "Abgebrochen" : "Erledigt",
           "Bemerkung": order.technicianRemark || "",
           "WE\nLage": order.apartmentLocation || "",
           "Stunden / Material": "",
@@ -267,4 +267,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
+
 

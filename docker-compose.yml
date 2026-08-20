@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  htp-suite:
+    build: .
+    container_name: htp-service-suite
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Die Datenbank wird im /data Ordner abgelegt, der gemountet ist!
+      - DATABASE_URL=file:/data/dev.db
+    volumes:
+      # Dies ist dein heiliger Backup-Ordner! 
+      # Alles was in /data im Container landet, wird auf dem Proxmox im Ordner ./htp-data gespeichert.
+      - ./htp-data:/data

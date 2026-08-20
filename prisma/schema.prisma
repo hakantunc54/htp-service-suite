@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id              String    @id @default(uuid())
+  customerNumber  String?   @unique // z.B. 4324675000
+  customerName    String
+  phone           String?
+  mobile          String?
+  street          String?
+  zipCode         String?
+  city            String?
+  address         String    // Fallback/Volltext
+  
+  orders          Order[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Order {
+  id              String    @id @default(uuid())
+  
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // Auftragsdetails (Terminlogik)
+  htpPlanfenster    String?   // z.B. "08:00 - 08:45" (Aus htp Import - nur zur Info)
+  serviceWindow     String    @default("08:00 - 17:00") // Standard Servicefenster
+  kundenTerminStart DateTime? // Echter, mit Kunden vereinbarter Termin (Optional)
+  kundenTerminEnde  DateTime? // Optionales Ende des Kunden-Termins
+  
+  project         String?
+  networkElement  String?
+  orderType       String?   // TypeScript-Enum: "FTTB Bereitstellung" | "FTTB Entstörung" | "FTTH Bereitstellung" | "FTTH Entstörung" | "BdE (Bau der Endleitung)"
+  htpRemark       String?
+  
+  // Terminabsprache Felder
+  vosNumber           String? // z.B. 45644
+  broadbandTechnology String? // z.B. DSL
+  estimatedDuration   String? // z.B. "120 Minuten"
+  
+  // Prozess & Disposition
+  status          String    @default("Neu") 
+  // TypeScript-Enum: "Neu" | "Termin abstimmen" | "Kunde angerufen" ...
+  
+  communicationStatus String @default("Noch nicht angerufen")
+  // TypeScript-Enum: "Noch nicht angerufen" | "Noch nicht kontaktiert" ...
+  
+  vehicle         String?   // TypeScript-Enum: "Auto 1" | "Auto 2" | "Auto 3"
+  
+  // Abrechnung & Rechnungsstellung
+  isBilled        Boolean   @default(false)
+  billingMonth    String?   // z.B. "2026-08"
+  invoiceNumber   String?   
+  billingDate     DateTime? 
+  billingRemark   String?   // z.B. "Zweite Anfahrt", "Kunde nicht angetroffen", "Router eingerichtet"
+  
+  // Totals
+  totalWorkingTime  Float?    // Gesamte Arbeitszeit
+  totalMaterialCost Float?    // Materialkosten
+  totalTravelCost   Float?    // Fahrtkosten
+  flatRate          Float?    // Pauschale in €
+  orderValue        Float?    // Auftragswert gesamt in €
+  
+  services        OrderServiceItem[] // Zugeordnete Leistungen (aus dem Service-Katalog)
+  bdeDetails      BdeDetails?        // Spezifische Daten für BdE Aufträge
+  activities      Activity[]         // Durchgeführte Tätigkeiten
+  
+  history         HistoryEntry[]
+  tasks           Task[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  type        String   // z.B. "Router eingerichtet"
+  durationMin Int?     // Dauer in Minuten
+  remark      String?  
+  
+  createdAt   DateTime @default(now())
+}
+
+// Frei konfigurierbare Leistungskategorien (z.B. "Abbruch", "Anfahrt >12 km", "MAW")
+model ServiceItem {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  category    String   @default("ALL") // "FTTB", "BDE", "ALL"
+  defaultPrice Float?  
+  
+  orderItems  OrderServiceItem[]
+}
+
+model OrderServiceItem {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceItemId String
+  serviceItem   ServiceItem @relation(fields: [serviceItemId], references: [id])
+  quantity      Int      @default(1)
+  priceApplied  Float?   // Tatsächlich berechneter Preis für diese Leistung
+}
+
+// Separates Modul für "Bau der Endleitung"
+model BdeDetails {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  workingTime   Float?   // Arbeitszeit BdE
+  materialCost  Float?   // Materialkosten
+  cableMeters   Float?   // Kabelmeter
+  layingMaterial String? // Verlegematerial (Text)
+  taeSocket     Int?     // Anzahl TAE Dosen
+  networkSocket Int?     // Anzahl Netzwerkdosen
+  cableCanal    Float?   // Kabelkanal in Metern
+  remark        String?  // BdE spezifische Bemerkung
+  status        String?  // BdE Status
+}
+
+model HistoryEntry {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type        String   // NOTE, CALL, SMS, STATUS_CHANGE, SYSTEM
+  content     String
+  createdAt   DateTime @default(now())
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  title       String
+  dueDate     DateTime
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model SmsTemplate {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  content   String
+}

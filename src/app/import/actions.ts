@@ -136,9 +136,10 @@ export async function saveHistoricalExcelData(rows: any[]) {
     let importedCount = 0;
 
     for (const row of rows) {
-      if (!row["Kunde Name"] && !row["Kunden Name"]) continue; // Leere Zeile ueberspringen
+      const custName = row["Kunde Name"] || row["Kunden Name"] || row["Kundenname"] || row["Name"] || row["Kunde"];
+      if (!custName) continue;
 
-      const custName = row["Kunde Name"] || row["Kunden Name"] || "Unbekannt";
+      // custName already defined above
       const custNum = row["Kunden Nummer"] || row["Kunden\nNummer"] || row["KdNr"] || "";
       const phone = row["Kunde RufNr"] || row["Telefon"] || "";
       const street = row["Strasse"] || "";

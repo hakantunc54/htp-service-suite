@@ -68,22 +68,37 @@ export default function ImportPage() {
         let fttbCount = 0;
         let bdeCount = 0;
 
+        
         wb.SheetNames.forEach(sheetName => {
           const ws = wb.Sheets[sheetName];
-          const data = xlsx.utils.sheet_to_json(ws);
+          // Lese als 2D Array um die Header-Zeile zu finden
+          const rawData = xlsx.utils.sheet_to_json(ws, { header: 1 });
           
-          if (sheetName.toUpperCase().includes('FTTB')) {
-            data.forEach((r: any) => r._SourceType = "FTTB");
+          let headerRowIndex = -1;
+          for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+            const rowArr = (rawData[i] as any[]) || [];
+            const rowStr = rowArr.join(" ").toLowerCase();
+            if (rowStr.includes("plz") || rowStr.includes("kunde") || rowStr.includes("termin")) {
+              headerRowIndex = i;
+              break;
+            }
+          }
+
+          if (headerRowIndex >= 0) {
+            // Generiere JSON ab der gefundenen Header-Zeile
+            const data = xlsx.utils.sheet_to_json(ws, { range: headerRowIndex });
+            
+            const isBde = sheetName.toUpperCase().includes('BDE');
+            const isFttb = sheetName.toUpperCase().includes('FTTB');
+            
+            data.forEach((r: any) => r._SourceType = isBde ? "BDE" : "FTTB");
+            
             allRows = allRows.concat(data);
-            fttbCount += data.length;
-          } else if (sheetName.toUpperCase().includes('BDE')) {
-            data.forEach((r: any) => r._SourceType = "BDE");
-            allRows = allRows.concat(data);
-            bdeCount += data.length;
-          } else {
-            allRows = allRows.concat(data);
+            if (isBde) bdeCount += data.length;
+            else fttbCount += data.length;
           }
         });
+
 
         setExcelStats({ fttb: fttbCount, bde: bdeCount, total: allRows.length });
         setExcelRows(allRows);

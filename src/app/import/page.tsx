@@ -127,6 +127,7 @@ export default function ImportPage() {
 
 
         setExcelStats({ fttb: fttbCount, bde: bdeCount, total: allRows.length });
+        setPriceOverridesMap(localOverrides);
         setExcelRows(allRows);
         setExcelStatus("idle");
         toast.success(allRows.length + " Zeilen erfolgreich eingelesen!");

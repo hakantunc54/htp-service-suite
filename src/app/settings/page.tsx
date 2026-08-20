@@ -229,7 +229,7 @@ export default function SettingsPage() {
                       <button 
                         onClick={() => handlePasswordChangeClick(user.id, user.name)}
                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Passwort �ndern"
+                        title="Passwort ändern"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -255,18 +255,18 @@ export default function SettingsPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="bg-slate-900 p-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                Passwort �ndern
+                Passwort ändern
               </h2>
               <button 
                 onClick={() => setPasswordModalOpen(false)}
                 className="text-slate-400 hover:text-white transition-colors"
               >
-                ?
+                ✕
               </button>
             </div>
             <div className="p-6">
               <p className="text-gray-600 mb-4">
-                Neues Passwort f�r <strong>{passwordModalUser.name}</strong> festlegen:
+                Neues Passwort für <strong>{passwordModalUser.name}</strong> festlegen:
               </p>
               <input 
                 type="password"

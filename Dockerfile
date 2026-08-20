@@ -19,6 +19,9 @@ RUN npx prisma generate
 # Dummy DB URL für den Next.js Build-Prozess (Prerendering)
 ENV DATABASE_URL="file:./dev.db"
 
+# Schema in die temporäre Build-Datenbank pushen (für Prerendering)
+RUN npx prisma db push
+
 # Build Next.js app
 RUN npm run build
 

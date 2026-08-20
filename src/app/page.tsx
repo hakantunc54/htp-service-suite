@@ -1,68 +1,48 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from "@prisma/client";
 import { FileText, CalendarCheck, PhoneCall, Euro, Wallet } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 const prisma = new PrismaClient();
 
 export default async function Home() {
-  // Get start and end of today
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   
   const endOfToday = new Date();
   endOfToday.setHours(23, 59, 59, 999);
 
-  // KPIs
   const ordersToday = await prisma.order.count({
-    where: {
-      createdAt: {
-        gte: startOfToday,
-        lte: endOfToday
-      }
-    }
+    where: { createdAt: { gte: startOfToday, lte: endOfToday } }
   });
 
   const callbacksToday = await prisma.order.count({
     where: {
-      status: {
-        in: ["Kunde nicht erreicht", "Kunde hat zurückgerufen", "Neu"]
-      },
-      communicationStatus: {
-        notIn: ["Termin bestätigt"]
-      }
+      status: { in: ["Kunde nicht erreicht", "Kunde hat zurückgerufen", "Neu"] },
+      communicationStatus: { notIn: ["Termin bestätigt"] }
     }
   });
 
   const appointmentsToday = await prisma.order.count({
-    where: {
-      kundenTerminStart: {
-        gte: startOfToday,
-        lte: endOfToday
-      }
-    }
+    where: { kundenTerminStart: { gte: startOfToday, lte: endOfToday } }
   });
 
-  // Financials
   const financialData = await prisma.order.aggregate({
-    _sum: {
-      orderValue: true
-    },
-    where: {
-      isBilled: false,
-      status: "Erfolgreich abgeschlossen"
-    }
+    _sum: { orderValue: true },
+    where: { isBilled: false, status: "Erfolgreich abgeschlossen" }
   });
   
   const billedData = await prisma.order.aggregate({
-    _sum: {
-      orderValue: true
-    },
-    where: {
-      isBilled: true
-    }
+    _sum: { orderValue: true },
+    where: { isBilled: true }
   });
 
   const openValue = financialData._sum.orderValue || 0;
   const closedValue = billedData._sum.orderValue || 0;
+
+  const formatEuro = (value: number) => {
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value);
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -111,7 +91,7 @@ export default async function Home() {
           </div>
           <div>
             <h3 className="text-gray-500 font-medium text-sm">Offener Abrechnungswert (Unerledigt)</h3>
-            <p className="text-3xl font-bold mt-1 text-slate-800">{openValue.toFixed(2)} €</p>
+            <p className="text-3xl font-bold mt-1 text-slate-800">{formatEuro(openValue)}</p>
           </div>
         </div>
 
@@ -121,7 +101,7 @@ export default async function Home() {
           </div>
           <div>
             <h3 className="text-gray-500 font-medium text-sm">Abgerechneter Umsatz (Gesamt)</h3>
-            <p className="text-3xl font-bold mt-1 text-emerald-600">{closedValue.toFixed(2)} €</p>
+            <p className="text-3xl font-bold mt-1 text-emerald-600">{formatEuro(closedValue)}</p>
           </div>
         </div>
 

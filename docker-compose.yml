@@ -1,12 +1,9 @@
-version: '3.8'
-
 services:
   htp-suite:
     build: .
     container_name: htp-service-suite
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    network_mode: "host"
     environment:
       # Die Datenbank wird im /data Ordner abgelegt, der gemountet ist!
       - DATABASE_URL=file:/data/dev.db

@@ -108,7 +108,7 @@ export async function checkImportWarnings(orders: ParsedOrder[]) {
   return warnings;
 }
 
-export async function saveHistoricalExcelData(rows: any[]) {
+export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Record<string, number>) {
   try {
     const serviceItems = await prisma.serviceItem.findMany();
     

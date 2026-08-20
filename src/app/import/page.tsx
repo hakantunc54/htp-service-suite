@@ -20,6 +20,7 @@ export default function ImportPage() {
   const [excelRows, setExcelRows] = useState<any[]>([]);
   const [excelStatus, setExcelStatus] = useState<"idle" | "analyzing" | "saving" | "success">("idle");
   const [excelStats, setExcelStats] = useState({ fttb: 0, bde: 0, total: 0 });
+  const [priceOverridesMap, setPriceOverridesMap] = useState<Record<string, number>>({});
 
   const handleParseEmail = async () => {
     setStatus("analyzing");

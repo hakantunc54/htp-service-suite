@@ -1,0 +1,19 @@
+{
+  "Termin": "2026-01-01T23:00:00.000Z",
+  "PLZ": 31319,
+  "Ort": "Sehnde Bolzum",
+  "Strasse": "August-Hennies-Weg",
+  "Nr": 12,
+  "Techniker": "Auto 1",
+  "Port": "SEH001Z003/E1/01/06",
+  "Kunde Name": "Bernd Schrader",
+  "Kunden\r\nNummer": 4507081000,
+  "Kunde RufNr": "0170/2888586",
+  "Status": "Erledigt",
+  "Bemerkung": "Kunde nicht vor Ort. Nachbar hat mich in die Wohnung gelassen. Anschluss erfolgreich geschaltet, Signal liegt an. Kein Router / Fremdrouter. Bereitstellung ohne Routerinstallation!",
+  "WE\r\nLage": "000/001",
+  "FTTB": 1,
+  "Abbruch": "",
+  "Anfahrt\r\n<12": 1,
+  "_SourceType": "FTTB"
+}

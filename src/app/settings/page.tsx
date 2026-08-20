@@ -1,0 +1,228 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { getSettingsData, updateServiceItemPrice, updateSmsTemplate } from "./actions";
+import { Settings, Users, Calculator, MessageSquare, Save, Plus } from "lucide-react";
+import { toast } from "sonner";
+
+type SettingsData = Awaited<ReturnType<typeof getSettingsData>>;
+
+export default function SettingsPage() {
+  const [data, setData] = useState<SettingsData | null>(null);
+  const [activeTab, setActiveTab] = useState<"catalog" | "sms" | "users">("catalog");
+  const [loading, setLoading] = useState(true);
+
+  // Local state for edits
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [smsTexts, setSmsTexts] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    const res = await getSettingsData();
+    setData(res);
+    
+    const p: Record<string, number> = {};
+    res.serviceItems.forEach(s => p[s.id] = s.defaultPrice || 0);
+    setPrices(p);
+
+    const s: Record<string, string> = {};
+    res.smsTemplates.forEach(t => s[t.id] = t.content);
+    setSmsTexts(s);
+    
+    setLoading(false);
+  };
+
+  const handleSavePrice = async (id: string) => {
+    const res = await updateServiceItemPrice(id, prices[id]);
+    if (res.success) {
+      toast.success("Preis erfolgreich aktualisiert!");
+    } else {
+      toast.error("Fehler: " + res.error);
+    }
+  };
+
+  const handleSaveSms = async (id: string) => {
+    const res = await updateSmsTemplate(id, smsTexts[id]);
+    if (res.success) {
+      toast.success("SMS-Vorlage gespeichert!");
+    } else {
+      toast.error("Fehler: " + res.error);
+    }
+  };
+
+  if (loading || !data) return <div className="p-8 text-center text-gray-500">Lade Einstellungen...</div>;
+
+  return (
+    <div className="p-8 max-w-6xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
+        <Settings className="w-8 h-8 text-slate-800" />
+        Einstellungen & Control Center
+      </h1>
+
+      <div className="flex gap-4 mb-8">
+        <button 
+          onClick={() => setActiveTab("catalog")}
+          className={"flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors " + (activeTab === "catalog" ? "bg-slate-800 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50")}
+        >
+          <Calculator className="w-5 h-5" /> Leistungskatalog
+        </button>
+        <button 
+          onClick={() => setActiveTab("sms")}
+          className={"flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors " + (activeTab === "sms" ? "bg-slate-800 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50")}
+        >
+          <MessageSquare className="w-5 h-5" /> SMS Vorlagen
+        </button>
+        <button 
+          onClick={() => setActiveTab("users")}
+          className={"flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors " + (activeTab === "users" ? "bg-slate-800 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50")}
+        >
+          <Users className="w-5 h-5" /> Benutzer & Team
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        {activeTab === "catalog" && (
+          <div className="animate-in fade-in">
+            <h2 className="text-xl font-bold mb-4">Leistungskatalog & Standardpreise</h2>
+            <p className="text-gray-500 mb-6 text-sm">
+              Hier kannst du die Basispreise für alle HTP-Positionen anpassen. Änderungen gelten sofort für alle neuen Abrechnungen.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-y border-gray-200 text-gray-500">
+                    <th className="px-4 py-3 font-medium">Position</th>
+                    <th className="px-4 py-3 font-medium">Kategorie</th>
+                    <th className="px-4 py-3 font-medium">Standard-Preis (€)</th>
+                    <th className="px-4 py-3 font-medium text-right">Aktion</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {data.serviceItems.map(item => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={prices[item.id] || 0}
+                          onChange={(e) => setPrices({...prices, [item.id]: parseFloat(e.target.value) || 0})}
+                          className="border border-gray-300 rounded px-2 py-1 w-24 text-right focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => handleSavePrice(item.id)}
+                          className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-2 rounded transition-colors"
+                          title="Speichern"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "sms" && (
+          <div className="animate-in fade-in">
+            <h2 className="text-xl font-bold mb-4">SMS Vorlagen</h2>
+            <p className="text-gray-500 mb-6 text-sm">
+              Diese Texte werden verwendet, wenn du einem Kunden eine SMS schickst. Du kannst den Platzhalter [KUNDENNAME] verwenden, dieser wird automatisch durch den echten Namen ersetzt.
+            </p>
+            <div className="space-y-6">
+              {data.smsTemplates.map(template => (
+                <div key={template.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-gray-800">{template.name}</h3>
+                    <button
+                      onClick={() => handleSaveSms(template.id)}
+                      className="flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      <Save className="w-4 h-4" /> Speichern
+                    </button>
+                  </div>
+                  <textarea
+                    value={smsTexts[template.id] || ""}
+                    onChange={(e) => setSmsTexts({...smsTexts, [template.id]: e.target.value})}
+                    className="w-full h-32 border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-y"
+                  />
+                </div>
+              ))}
+              {data.smsTemplates.length === 0 && (
+                <div className="text-gray-500 text-center p-8 bg-gray-50 rounded-lg">
+                  Noch keine SMS-Vorlagen in der Datenbank angelegt. (Führe reset_testdaten.js aus, um sie zu generieren)
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "users" && (
+          <div className="animate-in fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold">Benutzer & Team</h2>
+                <p className="text-gray-500 text-sm mt-1">Verwalte die Zugänge zum CRM-System.</p>
+              </div>
+              <button className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors">
+                <Plus className="w-4 h-4" /> Benutzer anlegen
+              </button>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-yellow-800">
+                <strong>Hinweis:</strong> Die Login-Pflicht ist aktuell für den lokalen Entwicklungsmodus noch deaktiviert. Das Login-System wird in Kürze fertiggestellt!
+              </p>
+            </div>
+
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-y border-gray-200 text-gray-500">
+                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">E-Mail (Login)</th>
+                  <th className="px-4 py-3 font-medium">Rolle</th>
+                  <th className="px-4 py-3 font-medium text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {data.users.map(user => (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 font-bold text-gray-900">{user.name}</td>
+                    <td className="px-4 py-4 text-gray-600">{user.email}</td>
+                    <td className="px-4 py-4">
+                      <span className={"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium " + (user.role === "ADMIN" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800")}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">Aktiv</span>
+                    </td>
+                  </tr>
+                ))}
+                {data.users.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                      (Noch keine Benutzer angelegt. Das System läuft komplett offen.)
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

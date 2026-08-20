@@ -83,7 +83,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
         </nav>
         
         <div className="p-4 border-t border-slate-800/50 m-4 rounded-2xl bg-slate-900">
-          <Link href="/" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:text-white text-slate-400 transition-colors">
+          <Link href="/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:text-white text-slate-400 transition-colors">
             <Settings className="w-5 h-5 opacity-75" />
             <span className="font-medium text-sm">Einstellungen</span>
           </Link>

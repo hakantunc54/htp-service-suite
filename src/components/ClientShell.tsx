@@ -12,9 +12,9 @@ import { Toaster } from "sonner";
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Smart Import", href: "/import", icon: Inbox },
-  { name: "Terminabsprachen", href: "/orders", icon: Calendar, highlight: true },
-  { name: "Disposition", href: "/disposition", icon: Users },
-  { name: "Kunden & Auftr�ge", href: "/customers", icon: UserCircle },
+  { name: "Terminabsprachen", href: "/terminabsprachen", icon: Calendar, highlight: true },
+  { name: "Disposition", href: "/planning", icon: Calendar },
+  { name: "Kunden & Auftr�ge", href: "/orders", icon: Users },
   { name: "Abrechnung", href: "/billing", icon: Calculator },
 ];
 

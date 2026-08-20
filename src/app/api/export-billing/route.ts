@@ -51,9 +51,10 @@ export async function GET(request: Request) {
           take: 1
         }
       },
-      orderBy: {
-        kundenTerminStart: 'asc'
-      }
+      orderBy: [
+          { kundenTerminStart: 'asc' },
+          { vehicle: 'asc' }
+        ]
     });
 
     // Helper zur Adress-Trennung
@@ -231,21 +232,50 @@ export async function GET(request: Request) {
       return techA.localeCompare(techB, undefined, { numeric: true, sensitivity: 'base' });
     };
 
+
     fttbRows.sort(sortRows);
     bdeRows.sort(sortRows);
 
+    // Fge visuelle Trennlinien (leere Zeilen) zwischen Tagen und Autos ein
+    const insertGaps = (rows: any[]) => {
+      if (rows.length === 0) return rows;
+      const newRows = [];
+      let lastDate = rows[0].Termin;
+      let lastTech = rows[0].Techniker;
+      
+      for (const row of rows) {
+        if (row.Termin !== lastDate) {
+          // Neuer Tag! 2 leere Zeilen
+          newRows.push({});
+          newRows.push({});
+          lastDate = row.Termin;
+          lastTech = row.Techniker;
+        } else if (row.Techniker !== lastTech) {
+          // Gleicher Tag, aber neues Auto! 1 leere Zeile
+          newRows.push({});
+          lastTech = row.Techniker;
+        }
+        newRows.push(row);
+      }
+      return newRows;
+    };
+
+    const groupedFttbRows = insertGaps(fttbRows);
+    const groupedBdeRows = insertGaps(bdeRows);
+
     // Workbook erstellen
+
     const wb = xlsx.utils.book_new();
 
     if (fttbRows.length > 0) {
-      const wsFTTB = xlsx.utils.json_to_sheet(fttbRows);
+      const wsFTTB = xlsx.utils.json_to_sheet(groupedFttbRows);
       xlsx.utils.book_append_sheet(wb, wsFTTB, "FTTB");
     } else {
       xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet([{"Hinweis": "Keine FTTB Abrechnungen in diesem Zeitraum"}]), "FTTB");
     }
 
     if (bdeRows.length > 0) {
-      const wsBDE = xlsx.utils.json_to_sheet(bdeRows);
+      const wsBDE = xlsx.utils.json_to_sheet(groupedBdeRows);
       xlsx.utils.book_append_sheet(wb, wsBDE, "BDE");
     } else {
       xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet([{"Hinweis": "Keine BDE Abrechnungen in diesem Zeitraum"}]), "BDE");

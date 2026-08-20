@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { getOrders, getServiceItems, saveBilling } from "./actions";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 type OrderData = Awaited<ReturnType<typeof getOrders>>[0];
 type ServiceItem = Awaited<ReturnType<typeof getServiceItems>>[0];
 
-export default function OrdersPage() {
+function OrdersContent() {
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
@@ -428,5 +428,14 @@ export default function OrdersPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Lade Auftr�ge...</div>}>
+      <OrdersContent />
+    </Suspense>
   );
 }

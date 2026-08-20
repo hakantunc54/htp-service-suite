@@ -38,6 +38,7 @@ model Order {
   
   project         String?
   networkElement  String?
+  port            String?   // z.B. "E1/01/05"
   orderType       String?   // TypeScript-Enum: "FTTB Bereitstellung" | "FTTB Entstörung" | "FTTH Bereitstellung" | "FTTH Entstörung" | "BdE (Bau der Endleitung)"
   htpRemark       String?
   

@@ -36,6 +36,7 @@ export async function saveImportedOrders(orders: ParsedOrder[]) {
           
           vosNumber: orderData.vosNumber,
           broadbandTechnology: orderData.broadbandTechnology,
+          port: orderData.port,
         }
       });
       

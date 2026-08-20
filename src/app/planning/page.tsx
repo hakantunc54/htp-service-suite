@@ -143,7 +143,7 @@ export default function PlanningPage() {
         strasse,
         hausnummer,
         o.vehicle, // Fahrer
-        "", // Port
+        o.port || "", // Port
         displayName, // Ansprechpartner (wie gewünscht)
         o.customer.customerNumber || "",
         telefon, // Ansprechpartner Telefon

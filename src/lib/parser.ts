@@ -13,6 +13,7 @@ export interface ParsedOrder {
   isTerminabsprache?: boolean;
   vosNumber?: string;
   broadbandTechnology?: string;
+  port?: string;
 }
 
 export function parseHtpEmail(text: string): ParsedOrder[] {
@@ -33,6 +34,7 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
       let address = '';
       let vosNumber = '';
       let broadbandTechnology = '';
+      let port = '';
       
       for (const line of lines) {
         const lower = line.toLowerCase();
@@ -42,6 +44,7 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
         else if (lower.startsWith('anschlussadresse:')) address = line.substring(17).trim();
         else if (lower.startsWith('kontaktrufnummer:')) phone = line.substring(17).trim();
         else if (lower.startsWith('breitbandtechnik:')) broadbandTechnology = line.substring(17).trim();
+        else if (lower.startsWith('port:')) port = line.substring(5).trim();
       }
       
       if (customerName || address) {
@@ -53,7 +56,8 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
           phone,
           address,
           vosNumber,
-          broadbandTechnology
+          broadbandTechnology,
+          port
         });
       }
     }
@@ -70,6 +74,7 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
       let customerName = '';
       let phone = '';
       let address = '';
+      let port = '';
 
       for (const line of lines) {
         if (line.toLowerCase().startsWith('termin:')) {
@@ -94,6 +99,9 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
         else if (line.toLowerCase().startsWith('anschlussadresse:')) {
           address = line.substring(17).trim();
         }
+        else if (line.toLowerCase().startsWith('port:')) {
+          port = line.substring(5).trim();
+        }
       }
 
       let mappedType = OrderType.BDE; 
@@ -112,7 +120,8 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
           customerNumber,
           customerName: customerName || "Unbekannt",
           phone,
-          address
+          address,
+          port
         });
       }
     }

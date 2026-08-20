@@ -124,9 +124,9 @@ export default function ClientShell({ children }: { children: React.ReactNode })
             <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
             <button className="flex items-center gap-2 hover:bg-gray-50 p-1.5 rounded-lg transition-colors">
               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                MK
+                HT
               </div>
-              <span className="text-sm font-medium text-slate-700 hidden sm:block pr-2">Max Mustermann</span>
+              <span className="text-sm font-medium text-slate-700 hidden sm:block pr-2">Hakan Tunç</span>
             </button>
           </div>
         </header>

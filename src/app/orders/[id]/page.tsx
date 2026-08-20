@@ -104,9 +104,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </Link>
           
           <h1 className="text-2xl font-bold text-slate-900 mb-1">{order.customer.customerName}</h1>
-          <div className="text-sm text-gray-500 mb-6 flex items-center gap-2">
+          <div className="text-sm text-gray-500 mb-6 flex flex-wrap items-center gap-2">
             <span className="bg-gray-100 px-2 py-0.5 rounded">Kd-Nr: {order.customer.customerNumber}</span>
             <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{order.orderType}</span>
+            {order.port && (
+              <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-mono">Port: {order.port}</span>
+            )}
           </div>
 
           <div className="bg-slate-50 p-4 rounded-xl mb-6">

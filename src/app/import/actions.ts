@@ -160,6 +160,9 @@ export async function saveHistoricalExcelData(rows: any[]) {
         const parts = dateStr.split(".");
         if (parts.length === 3) {
           termin = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+        } else {
+          const parsed = new Date(dateStr);
+          if (!isNaN(parsed.getTime())) termin = parsed;
         }
       }
 

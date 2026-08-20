@@ -101,7 +101,8 @@ export default function ImportPage() {
   const handleSaveExcel = async () => {
     setExcelStatus("saving");
     try {
-      const result = await saveHistoricalExcelData(excelRows);
+      const plainRows = JSON.parse(JSON.stringify(excelRows));
+      const result = await saveHistoricalExcelData(plainRows);
       if (result.success) {
         toast.success(result.count + " historische Aufträge erfolgreich importiert!");
         setExcelStatus("success");

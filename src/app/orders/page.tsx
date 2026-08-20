@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getOrders, getServiceItems, saveBilling } from "./actions";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Users, Search, ChevronRight, Calculator, FileCheck2, Filter, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -10,13 +11,18 @@ type OrderData = Awaited<ReturnType<typeof getOrders>>[0];
 type ServiceItem = Awaited<ReturnType<typeof getServiceItems>>[0];
 
 export default function OrdersPage() {
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Filters
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams?.get("q") || "");
   const [dateFilter, setDateFilter] = useState("");
+
+  useEffect(() => {
+    if (searchParams?.get("q")) setSearch(searchParams.get("q") || "");
+  }, [searchParams]);
 
   // Billing Modal State
   const [billingOrder, setBillingOrder] = useState<OrderData | null>(null);

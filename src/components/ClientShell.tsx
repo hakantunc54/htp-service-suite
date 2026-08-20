@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { LayoutDashboard, Inbox, Calendar, Users, Calculator, Settings, Menu, Search, X, Bell, UserCircle } from "lucide-react";
 import { Toaster } from "sonner";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
   const router = useRouter();
@@ -28,6 +30,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     { name: "Kunden & Aufträge", href: "/orders", icon: Users },
     { name: "Abrechnung", href: "/billing", icon: Calculator },
   ];
+
+  if (pathname === "/login") return <>{children}</>;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans">
@@ -116,20 +120,39 @@ export default function ClientShell({ children }: { children: React.ReactNode })
             </form>
           </div>
 
-          <div className="flex items-center gap-3 lg:gap-5">
-            <button className="p-2 text-gray-400 hover:text-slate-700 transition-colors relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-            <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
-            <button className="flex items-center gap-2 hover:bg-gray-50 p-1.5 rounded-lg transition-colors">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                HT
+          
+            <div className="flex items-center gap-3 lg:gap-5">
+              <button className="p-2 text-gray-400 hover:text-slate-700 transition-colors relative">
+                <Bell className="w-5 h-5" />
+                {/* <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span> */}
+              </button>
+              <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
+              
+              <div className="relative">
+                <button 
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 hover:bg-gray-50 p-1.5 rounded-lg transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                    A
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 hidden sm:block pr-2">Admin</span>
+                </button>
+                
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+                    <button 
+                      onClick={() => { setIsUserMenuOpen(false); signOut(); }}
+                      className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                    >
+                      Abmelden
+                    </button>
+                  </div>
+                )}
               </div>
-              <span className="text-sm font-medium text-slate-700 hidden sm:block pr-2">Hakan Tunç</span>
-            </button>
-          </div>
-        </header>
+            </div>
+
+          </header>
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-[#f8fafc]">

@@ -38,3 +38,18 @@ export async function updateSmsTemplate(id: string, content: string) {
     return { success: false, error: String(error) };
   }
 }
+
+
+import bcrypt from "bcrypt";
+export async function updatePassword(userId: string, newPassword: string) {
+  try {
+    const hash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hash }
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}

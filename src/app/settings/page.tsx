@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { getSettingsData, updateServiceItemPrice, updateSmsTemplate } from "./actions";
+import { getSettingsData, updateServiceItemPrice, updateSmsTemplate, updatePassword } from "./actions";
 import { Settings, Users, Calculator, MessageSquare, Save, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [data, setData] = useState<SettingsData | null>(null);
   const [activeTab, setActiveTab] = useState<"catalog" | "sms" | "users">("catalog");
   const [loading, setLoading] = useState(true);
+  const [newPassword, setNewPassword] = useState("");
 
   // Local state for edits
   const [prices, setPrices] = useState<Record<string, number>>({});
@@ -91,7 +92,36 @@ export default function SettingsPage() {
               Hier kannst du die Basispreise für alle HTP-Positionen anpassen. Änderungen gelten sofort für alle neuen Abrechnungen.
             </p>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <h3 className="font-bold text-blue-900 mb-2">Mein Passwort �ndern</h3>
+              <div className="flex gap-4 items-center">
+                <input 
+                  type="password" 
+                  placeholder="Neues Passwort eingeben..."
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="flex-1 border border-blue-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                  onClick={async () => {
+                    if (newPassword.length < 5) return toast.error("Passwort zu kurz!");
+                    const admin = data.users.find(u => u.role === "ADMIN");
+                    if (!admin) return;
+                    const res = await updatePassword(admin.id, newPassword);
+                    if (res.success) {
+                      toast.success("Passwort erfolgreich ge�ndert!");
+                      setNewPassword("");
+                    } else toast.error("Fehler beim �ndern.");
+                  }}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Speichern
+                </button>
+              </div>
+            </div>
+
+            <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-y border-gray-200 text-gray-500">
                     <th className="px-4 py-3 font-medium">Position</th>

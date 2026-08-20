@@ -117,7 +117,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
       "FTTB": "FTTB",
       "Abbruch": "Abbruch",
       "Anfahrt >12": "Anfahrt >12",
-      "Anfahrt\n<12": "Anfahrt <12", // if they have it like this
+      "Anfahrt\n<12": "Anfahrt <12", "Anfahrt\r\n<12": "Anfahrt <12", // if they have it like this
       "Anfahrt <12": "Anfahrt <12",
       "MAW (5Min)": "MAW (5Min)",
       "PCI": "PCI",
@@ -137,10 +137,16 @@ export async function saveHistoricalExcelData(rows: any[]) {
 
     for (const row of rows) {
       const custName = row["Kunde Name"] || row["Kunden Name"] || row["Kundenname"] || row["Name"] || row["Kunde"];
-      if (!custName) continue;
+      
+      // LOG ROW FOR DEBUGGING
+      if (importedCount === 0) {
+        require('fs').writeFileSync('last_excel_row.json', JSON.stringify(row, null, 2));
+      }
+      if (!row["Kunde Name"] && !row["Kunden Name"] && !row["Kunde"] && !row["Name"]) continue;
+
 
       // custName already defined above
-      const custNum = row["Kunden Nummer"] || row["Kunden\nNummer"] || row["KdNr"] || row["Kd-Nr"] || row["Kd-Nr."] || row["Kundennummer"] || row["Kunden-Nummer"] || row["Kunden Nr"] || row["Kunde Nr"] || row["Kunde-Nr"] || row["Kunden Nr."] || "";
+      const custNum = row["Kunden Nummer"] || row["Kunden\nNummer"] || row["Kunden\r\nNummer"] || row["KdNr"] || row["Kd-Nr"] || row["Kd-Nr."] || row["Kundennummer"] || row["Kunden-Nummer"] || row["Kunden Nr"] || row["Kunde Nr"] || row["Kunde-Nr"] || row["Kunden Nr."] || "";
       const phone = row["Kunde RufNr"] || row["Telefon"] || "";
       const street = row["Strasse"] || "";
       const nr = row["Nr"] || "";
@@ -149,7 +155,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
       const address = `${street} ${nr}, ${plz} ${ort}`.trim();
       const port = row["Port"] || "";
       const bem = row["Bemerkung"] || "";
-      const weLage = row["WE Lage"] || row["WE\nLage"] || "";
+      const weLage = row["WE Lage"] || row["WE\nLage"] || row["WE\r\nLage"] || "";
       const dateStr = row["Termin"];
       const vehicle = row["Techniker"] || "";
       const orderType = row._SourceType === "BDE" ? "BdE (Bau der Endleitung)" : "FTTB Bereitstellung";
@@ -253,5 +259,6 @@ export async function saveHistoricalExcelData(rows: any[]) {
     return { success: false, error: String(error) };
   }
 }
+
 
 

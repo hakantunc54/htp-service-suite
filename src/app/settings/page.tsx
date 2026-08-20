@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSettingsData, updateServiceItemPrice, updateSmsTemplate, updatePassword } from "./actions";
-import { Settings, Users, Calculator, MessageSquare, Save, Plus } from "lucide-react";
+import { Settings, Users, Calculator, MessageSquare, Save, Plus, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 
 type SettingsData = Awaited<ReturnType<typeof getSettingsData>>;
@@ -42,6 +42,20 @@ export default function SettingsPage() {
       toast.success("Preis erfolgreich aktualisiert!");
     } else {
       toast.error("Fehler: " + res.error);
+    }
+  };
+
+  
+  const handlePasswordChange = async (userId: string, userName: string) => {
+    const newPass = prompt(`Neues Passwort f�r ${userName} eingeben (mind. 5 Zeichen):`);
+    if (!newPass) return;
+    if (newPass.length < 5) return toast.error("Passwort zu kurz!");
+    
+    const res = await updatePassword(userId, newPass);
+    if (res.success) {
+      toast.success(`Passwort f�r ${userName} erfolgreich ge�ndert!`);
+    } else {
+      toast.error("Fehler beim �ndern.");
     }
   };
 
@@ -183,33 +197,7 @@ export default function SettingsPage() {
               </button>
             </div>
             
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-              <h3 className="font-bold text-blue-900 mb-2">Mein Passwort ändern</h3>
-              <div className="flex gap-4 items-center">
-                <input 
-                  type="password" 
-                  placeholder="Neues Passwort eingeben..."
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="flex-1 border border-blue-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button 
-                  onClick={async () => {
-                    if (newPassword.length < 5) return toast.error("Passwort zu kurz!");
-                    const admin = data.users.find(u => u.role === "ADMIN");
-                    if (!admin) return;
-                    const res = await updatePassword(admin.id, newPassword);
-                    if (res.success) {
-                      toast.success("Passwort erfolgreich geändert!");
-                      setNewPassword("");
-                    } else toast.error("Fehler beim Ändern.");
-                  }}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Speichern
-                </button>
-              </div>
-            </div>
+            
 
             <table className="w-full text-left text-sm">
               <thead>
@@ -230,8 +218,15 @@ export default function SettingsPage() {
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-right">
+                    <td className="px-4 py-4 text-right flex items-center justify-end gap-3">
                       <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">Aktiv</span>
+                      <button 
+                        onClick={() => handlePasswordChange(user.id, user.name)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Passwort �ndern"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}

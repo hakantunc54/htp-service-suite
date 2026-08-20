@@ -46,7 +46,10 @@ export default function OrdersPage() {
     const matchesSearch = 
       o.customer.customerName.toLowerCase().includes(term) ||
       o.customer.address.toLowerCase().includes(term) ||
-      (o.orderType?.toLowerCase() || "").includes(term);
+      (o.orderType?.toLowerCase() || "").includes(term) ||
+      (o.customer.customerNumber?.toLowerCase() || "").includes(term) ||
+      (o.customer.phone?.toLowerCase() || "").includes(term) ||
+      (o.customer.mobile?.toLowerCase() || "").includes(term);
     
     // 2. Date Filter
     // We check if the kundenTerminStart matches the selected date

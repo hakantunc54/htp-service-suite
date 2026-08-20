@@ -140,7 +140,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
       if (!custName) continue;
 
       // custName already defined above
-      const custNum = row["Kunden Nummer"] || row["Kunden\nNummer"] || row["KdNr"] || "";
+      const custNum = row["Kunden Nummer"] || row["Kunden\nNummer"] || row["KdNr"] || row["Kd-Nr"] || row["Kd-Nr."] || row["Kundennummer"] || row["Kunden-Nummer"] || row["Kunden Nr"] || row["Kunde Nr"] || row["Kunde-Nr"] || row["Kunden Nr."] || "";
       const phone = row["Kunde RufNr"] || row["Telefon"] || "";
       const street = row["Strasse"] || "";
       const nr = row["Nr"] || "";
@@ -253,3 +253,5 @@ export async function saveHistoricalExcelData(rows: any[]) {
     return { success: false, error: String(error) };
   }
 }
+
+

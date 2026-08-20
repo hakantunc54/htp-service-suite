@@ -118,7 +118,7 @@ export default function ImportPage() {
     setExcelStatus("saving");
     try {
       const plainRows = JSON.parse(JSON.stringify(excelRows));
-      const result = await saveHistoricalExcelData(plainRows);
+      const result = await saveHistoricalExcelData(plainRows, priceOverridesMap);
       if (result.success) {
         toast.success(result.count + " historische Aufträge erfolgreich importiert!");
         setExcelStatus("success");

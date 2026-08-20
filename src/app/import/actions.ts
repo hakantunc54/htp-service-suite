@@ -146,18 +146,19 @@ export async function saveHistoricalExcelData(rows: any[]) {
 
 
       // custName already defined above
-      const custNum = row["Kunden Nummer"] || row["Kunden\nNummer"] || row["Kunden\r\nNummer"] || row["KdNr"] || row["Kd-Nr"] || row["Kd-Nr."] || row["Kundennummer"] || row["Kunden-Nummer"] || row["Kunden Nr"] || row["Kunde Nr"] || row["Kunde-Nr"] || row["Kunden Nr."] || "";
-      const phone = row["Kunde RufNr"] || row["Telefon"] || "";
-      const street = row["Strasse"] || "";
-      const nr = row["Nr"] || "";
-      const plz = row["PLZ"] || "";
-      const ort = row["Ort"] || "";
+      let custNum = row["Kunden Nummer"] || row["Kunden\nNummer"] || row["Kunden\r\nNummer"] || row["KdNr"] || row["Kd-Nr"] || row["Kd-Nr."] || row["Kundennummer"] || row["Kunden-Nummer"] || row["Kunden Nr"] || row["Kunde Nr"] || row["Kunde-Nr"] || row["Kunden Nr."] || "";
+      if (custNum) custNum = String(custNum);
+        const phone = String(row["Kunde RufNr"] || row["Telefon"] || "");
+      const street = String(row["Strasse"] || "");
+      const nr = String(row["Nr"] || "");
+      const plz = String(row["PLZ"] || "");
+      const ort = String(row["Ort"] || "");
       const address = `${street} ${nr}, ${plz} ${ort}`.trim();
       const port = row["Port"] || "";
       const bem = row["Bemerkung"] || "";
       const weLage = row["WE Lage"] || row["WE\nLage"] || row["WE\r\nLage"] || "";
       const dateStr = row["Termin"];
-      const vehicle = row["Techniker"] || "";
+      const vehicle = String(row["Techniker"] || "");
       const orderType = row._SourceType === "BDE" ? "BdE (Bau der Endleitung)" : "FTTB Bereitstellung";
 
       let termin = new Date();
@@ -259,6 +260,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
     return { success: false, error: String(error) };
   }
 }
+
 
 
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { getSettingsData, updateServiceItemPrice, updateSmsTemplate, updatePassword } from "./actions";
@@ -93,34 +93,6 @@ export default function SettingsPage() {
             </p>
             <div className="overflow-x-auto">
               
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-              <h3 className="font-bold text-blue-900 mb-2">Mein Passwort �ndern</h3>
-              <div className="flex gap-4 items-center">
-                <input 
-                  type="password" 
-                  placeholder="Neues Passwort eingeben..."
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="flex-1 border border-blue-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button 
-                  onClick={async () => {
-                    if (newPassword.length < 5) return toast.error("Passwort zu kurz!");
-                    const admin = data.users.find(u => u.role === "ADMIN");
-                    if (!admin) return;
-                    const res = await updatePassword(admin.id, newPassword);
-                    if (res.success) {
-                      toast.success("Passwort erfolgreich ge�ndert!");
-                      setNewPassword("");
-                    } else toast.error("Fehler beim �ndern.");
-                  }}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Speichern
-                </button>
-              </div>
-            </div>
-
             <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-y border-gray-200 text-gray-500">
@@ -211,10 +183,32 @@ export default function SettingsPage() {
               </button>
             </div>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-yellow-800">
-                <strong>Hinweis:</strong> Die Login-Pflicht ist aktuell für den lokalen Entwicklungsmodus noch deaktiviert. Das Login-System wird in Kürze fertiggestellt!
-              </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <h3 className="font-bold text-blue-900 mb-2">Mein Passwort ändern</h3>
+              <div className="flex gap-4 items-center">
+                <input 
+                  type="password" 
+                  placeholder="Neues Passwort eingeben..."
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="flex-1 border border-blue-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                  onClick={async () => {
+                    if (newPassword.length < 5) return toast.error("Passwort zu kurz!");
+                    const admin = data.users.find(u => u.role === "ADMIN");
+                    if (!admin) return;
+                    const res = await updatePassword(admin.id, newPassword);
+                    if (res.success) {
+                      toast.success("Passwort erfolgreich geändert!");
+                      setNewPassword("");
+                    } else toast.error("Fehler beim Ändern.");
+                  }}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Speichern
+                </button>
+              </div>
             </div>
 
             <table className="w-full text-left text-sm">

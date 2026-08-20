@@ -3,16 +3,28 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, SessionProvider, useSession } from "next-auth/react";
 import { LayoutDashboard, Inbox, Calendar, Users, Calculator, Settings, Menu, Search, X, Bell, UserCircle } from "lucide-react";
 import { Toaster } from "sonner";
 
-export default function ClientShell({ children }: { children: React.ReactNode }) {
+
+
+const navItems = [
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Smart Import", href: "/import", icon: Inbox },
+  { name: "Terminabsprachen", href: "/orders", icon: Calendar, highlight: true },
+  { name: "Disposition", href: "/disposition", icon: Users },
+  { name: "Kunden & Auftr�ge", href: "/customers", icon: UserCircle },
+  { name: "Abrechnung", href: "/billing", icon: Calculator },
+];
+
+function ShellContent({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session } = useSession();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,16 +34,11 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     }
   };
 
-  const navItems = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "Smart Import", href: "/import", icon: Inbox },
-    { name: "Terminabsprachen", href: "/terminabsprachen", icon: Calendar, highlight: true },
-    { name: "Disposition", href: "/planning", icon: Calendar },
-    { name: "Kunden & Aufträge", href: "/orders", icon: Users },
-    { name: "Abrechnung", href: "/billing", icon: Calculator },
-  ];
-
   if (pathname === "/login") return <>{children}</>;
+
+  const userName = session?.user?.name || "Admin";
+  const userInitials = userName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans">
@@ -134,9 +141,9 @@ export default function ClientShell({ children }: { children: React.ReactNode })
                   className="flex items-center gap-2 hover:bg-gray-50 p-1.5 rounded-lg transition-colors"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                    A
+                    {userInitials}
                   </div>
-                  <span className="text-sm font-medium text-slate-700 hidden sm:block pr-2">Admin</span>
+                  <span className="text-sm font-medium text-slate-700 hidden sm:block pr-2">{userName}</span>
                 </button>
                 
                 {isUserMenuOpen && (
@@ -163,5 +170,14 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       </div>
       
     </div>
+  );
+}
+
+
+export default function ClientShell({ children }: { children: React.ReactNode }) {
+  return (
+    <SessionProvider>
+      <ShellContent>{children}</ShellContent>
+    </SessionProvider>
   );
 }

@@ -1,4 +1,4 @@
-"use client";
+Ôªø"use client";
 
 import { useState } from "react";
 import { parseHtpEmail, ParsedOrder } from "@/lib/parser";
@@ -26,10 +26,10 @@ export default function ImportPage() {
     const results = parseHtpEmail(text);
     
     if (results.length === 0 && text.trim()) {
-      toast.error("Keine Auftr‰ge in diesem Text gefunden.");
+      toast.error("Keine Auftr√§ge in diesem Text gefunden.");
       setWarnings([]);
     } else if (results.length > 0) {
-      toast.success(results.length + " Auftr‰ge erfolgreich erkannt!");
+      toast.success(results.length + " Auftr√§ge erfolgreich erkannt!");
       const apiWarnings = await checkImportWarnings(results);
       setWarnings(apiWarnings);
     }
@@ -42,7 +42,7 @@ export default function ImportPage() {
     setStatus("saving");
     const result = await saveImportedOrders(parsed);
     if (result.success) {
-      toast.success(parsed.length + " Auftr‰ge in die Datenbank importiert!");
+      toast.success(parsed.length + " Auftr√§ge in die Datenbank importiert!");
       setStatus("success");
       setParsed([]);
       setWarnings([]);
@@ -103,7 +103,7 @@ export default function ImportPage() {
     try {
       const result = await saveHistoricalExcelData(excelRows);
       if (result.success) {
-        toast.success(result.count + " historische Auftr‰ge erfolgreich importiert!");
+        toast.success(result.count + " historische Auftr√§ge erfolgreich importiert!");
         setExcelStatus("success");
         setExcelRows([]);
       } else {
@@ -126,13 +126,13 @@ export default function ImportPage() {
       <div className="flex gap-4 mb-8">
         <button 
           onClick={() => setActiveTab("email")}
-          className={lex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors {activeTab === "email" ? "bg-blue-600 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}}
+          className={"flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors " + (activeTab === "email" ? "bg-blue-600 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50")}
         >
           <Mail className="w-5 h-5" /> HTP E-Mails
         </button>
         <button 
           onClick={() => setActiveTab("excel")}
-          className={lex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors {activeTab === "excel" ? "bg-blue-600 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}}
+          className={"flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors " + (activeTab === "excel" ? "bg-blue-600 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50")}
         >
           <FileSpreadsheet className="w-5 h-5" /> Excel Historie (01.01. - 31.07.)
         </button>
@@ -142,7 +142,7 @@ export default function ImportPage() {
         <>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              htp E-Mail Text hier einf¸gen
+              htp E-Mail Text hier einf√ºgen
             </label>
             <textarea
               className="w-full h-48 border border-gray-300 rounded-lg p-4 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y"
@@ -170,7 +170,7 @@ export default function ImportPage() {
                   className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-lg shadow-green-600/20 flex items-center gap-2"
                 >
                   <CheckCircle2 className="w-6 h-6" />
-                  {status === "saving" ? "Speichere..." : "Alle Auftr‰ge ins CRM importieren"}
+                  {status === "saving" ? "Speichere..." : "Alle Auftr√§ge ins CRM importieren"}
                 </button>
               </div>
             </div>
@@ -184,10 +184,10 @@ export default function ImportPage() {
             <FileSpreadsheet className="w-12 h-12 text-blue-400 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-700 mb-2">Alte Abrechnungstabelle hochladen</h3>
             <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-              Lade deine Excel-Tabellen hoch. Das CRM liest "Kunden Nummer", "WE Lage", "Bemerkung" und die Rechnungspositionen automatisch aus und legt die alten Auftr‰ge als "Abgerechnet" in der Datenbank ab.
+              Lade deine Excel-Tabellen hoch. Das CRM liest "Kunden Nummer", "WE Lage", "Bemerkung" und die Rechnungspositionen automatisch aus und legt die alten Auftr√§ge als "Abgerechnet" in der Datenbank ab.
             </p>
             <label className="bg-white border border-blue-200 text-blue-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 cursor-pointer transition-colors shadow-sm inline-block">
-              Excel-Datei (.xlsx) ausw‰hlen
+              Excel-Datei (.xlsx) ausw√§hlen
               <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleExcelUpload} />
             </label>
           </div>
@@ -218,7 +218,7 @@ export default function ImportPage() {
                 className="w-full bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-lg shadow-green-600/20 flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="w-6 h-6" />
-                {excelStatus === "saving" ? "Import l‰uft (Das kann dauern)..." : "Jetzt in die CRM Historie importieren"}
+                {excelStatus === "saving" ? "Import l√§uft (Das kann dauern)..." : "Jetzt in die CRM Historie importieren"}
               </button>
             </div>
           )}

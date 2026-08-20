@@ -145,7 +145,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
       const nr = row["Nr"] || "";
       const plz = row["PLZ"] || "";
       const ort = row["Ort"] || "";
-      const address = ${'$'}{street} {nr}, {plz} {ort}.trim();
+      const address = `${street} ${nr}, ${plz} ${ort}`.trim();
       const port = row["Port"] || "";
       const bem = row["Bemerkung"] || "";
       const weLage = row["WE Lage"] || row["WE\nLage"] || "";
@@ -171,7 +171,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
       if (!customer) {
         customer = await prisma.customer.create({
           data: {
-            customerNumber: custNum || TMP-{Date.now()}-{Math.floor(Math.random()*1000)},
+            customerNumber: custNum || `TMP-${Date.now()}-${Math.floor(Math.random()*1000)}`,
             customerName: custName,
             phone: phone,
             address: address
@@ -201,7 +201,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
       
       for (const [colName, val] of Object.entries(row)) {
         const itemVal = Number(val);
-        if (isNaN(itemVal) || itemVal <= 0) continue; // Keine Menge = überspringen
+        if (isNaN(itemVal) || itemVal <= 0) continue; // Keine Menge = Ã¼berspringen
         
         // Versuche die Spalte zu matchen
         const targetName = columnMap[colName] || (colName === "optional" && row._SourceType === "BDE" ? "Optional (BDE)" : columnMap[colName]);
@@ -217,7 +217,7 @@ export async function saveHistoricalExcelData(rows: any[]) {
                priceToApply = itemVal;
                qty = 1;
             } else {
-               priceToApply = si.defaultPrice * qty;
+               priceToApply = (si.defaultPrice || 0) * qty;
             }
 
             await prisma.orderServiceItem.create({

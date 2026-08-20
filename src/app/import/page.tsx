@@ -2,25 +2,34 @@
 
 import { useState } from "react";
 import { parseHtpEmail, ParsedOrder } from "@/lib/parser";
-import { saveImportedOrders, checkImportWarnings } from "./actions";
-import { Upload, Mail, CheckCircle2, AlertTriangle, Info } from "lucide-react";
+import { saveImportedOrders, checkImportWarnings, saveHistoricalExcelData } from "./actions";
+import { Upload, Mail, CheckCircle2, AlertTriangle, Info, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import * as xlsx from "xlsx";
 
 export default function ImportPage() {
+  const [activeTab, setActiveTab] = useState<"email" | "excel">("email");
+
+  // Email State
   const [text, setText] = useState("");
   const [parsed, setParsed] = useState<ParsedOrder[]>([]);
   const [warnings, setWarnings] = useState<string[][]>([]);
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error" | "analyzing">("idle");
 
-  const handleParse = async () => {
+  // Excel State
+  const [excelRows, setExcelRows] = useState<any[]>([]);
+  const [excelStatus, setExcelStatus] = useState<"idle" | "analyzing" | "saving" | "success">("idle");
+  const [excelStats, setExcelStats] = useState({ fttb: 0, bde: 0, total: 0 });
+
+  const handleParseEmail = async () => {
     setStatus("analyzing");
     const results = parseHtpEmail(text);
     
     if (results.length === 0 && text.trim()) {
-      toast.error("Keine Auftr√§ge in diesem Text gefunden.");
+      toast.error("Keine Auftr‰ge in diesem Text gefunden.");
       setWarnings([]);
     } else if (results.length > 0) {
-      toast.success(`${results.length} Auftr√§ge erfolgreich erkannt! Analysiere CRM-Historie...`);
+      toast.success(results.length + " Auftr‰ge erfolgreich erkannt!");
       const apiWarnings = await checkImportWarnings(results);
       setWarnings(apiWarnings);
     }
@@ -29,18 +38,81 @@ export default function ImportPage() {
     setStatus("idle");
   };
 
-  const handleSave = async () => {
+  const handleSaveEmail = async () => {
     setStatus("saving");
     const result = await saveImportedOrders(parsed);
     if (result.success) {
-      toast.success(`${parsed.length} Auftr√§ge in die Datenbank importiert!`);
+      toast.success(parsed.length + " Auftr‰ge in die Datenbank importiert!");
       setStatus("success");
       setParsed([]);
       setWarnings([]);
       setText("");
     } else {
-      toast.error("Fehler beim Speichern der Auftr√§ge.");
+      toast.error("Fehler beim Speichern.");
       setStatus("error");
+    }
+  };
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setExcelStatus("analyzing");
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = xlsx.read(bstr, { type: 'binary', cellDates: true });
+        
+        let allRows: any[] = [];
+        let fttbCount = 0;
+        let bdeCount = 0;
+
+        wb.SheetNames.forEach(sheetName => {
+          const ws = wb.Sheets[sheetName];
+          const data = xlsx.utils.sheet_to_json(ws);
+          
+          if (sheetName.toUpperCase().includes('FTTB')) {
+            data.forEach((r: any) => r._SourceType = "FTTB");
+            allRows = allRows.concat(data);
+            fttbCount += data.length;
+          } else if (sheetName.toUpperCase().includes('BDE')) {
+            data.forEach((r: any) => r._SourceType = "BDE");
+            allRows = allRows.concat(data);
+            bdeCount += data.length;
+          } else {
+            allRows = allRows.concat(data);
+          }
+        });
+
+        setExcelStats({ fttb: fttbCount, bde: bdeCount, total: allRows.length });
+        setExcelRows(allRows);
+        setExcelStatus("idle");
+        toast.success(allRows.length + " Zeilen erfolgreich eingelesen!");
+      } catch (err) {
+        console.error(err);
+        toast.error("Fehler beim Lesen der Excel-Datei.");
+        setExcelStatus("idle");
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleSaveExcel = async () => {
+    setExcelStatus("saving");
+    try {
+      const result = await saveHistoricalExcelData(excelRows);
+      if (result.success) {
+        toast.success(result.count + " historische Auftr‰ge erfolgreich importiert!");
+        setExcelStatus("success");
+        setExcelRows([]);
+      } else {
+        toast.error("Fehler beim Importieren: " + result.error);
+        setExcelStatus("idle");
+      }
+    } catch (e) {
+      toast.error("Server-Fehler.");
+      setExcelStatus("idle");
     }
   };
 
@@ -48,93 +120,108 @@ export default function ImportPage() {
     <div className="p-8 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
         <Upload className="w-8 h-8 text-blue-600" />
-        Smart Import
+        Import Center
       </h1>
-      
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          htp E-Mail Text hier einf√ºgen
-        </label>
-        <textarea
-          className="w-full h-48 border border-gray-300 rounded-lg p-4 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y"
-          placeholder="Betreff: Bereitstellung FTTB..."
-          value={text}
-          onChange={e => setText(e.target.value)}
-        />
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={handleParse}
-            disabled={!text.trim() || status === "analyzing"}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {status === "analyzing" ? "Analysiere..." : "E-Mail analysieren"}
-          </button>
-        </div>
-      </div>
 
-      {parsed.length > 0 && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-          <h2 className="text-xl font-bold flex items-center gap-2 border-b pb-2">
-            <Mail className="w-5 h-5 text-gray-500" />
-            Erkannte Auftr√§ge ({parsed.length})
-          </h2>
-          
-          <div className="grid gap-4">
-            {parsed.map((order, index) => (
-              <div key={index} className="bg-white border border-green-200 rounded-xl p-5 shadow-sm">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-900">{order.customerName}</h3>
-                    <p className="text-slate-600 text-sm">{order.address}</p>
-                  </div>
-                  <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    {order.orderType}
-                  </span>
+      <div className="flex gap-4 mb-8">
+        <button 
+          onClick={() => setActiveTab("email")}
+          className={lex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors {activeTab === "email" ? "bg-blue-600 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}}
+        >
+          <Mail className="w-5 h-5" /> HTP E-Mails
+        </button>
+        <button 
+          onClick={() => setActiveTab("excel")}
+          className={lex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors {activeTab === "excel" ? "bg-blue-600 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}}
+        >
+          <FileSpreadsheet className="w-5 h-5" /> Excel Historie (01.01. - 31.07.)
+        </button>
+      </div>
+      
+      {activeTab === "email" && (
+        <>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              htp E-Mail Text hier einf¸gen
+            </label>
+            <textarea
+              className="w-full h-48 border border-gray-300 rounded-lg p-4 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y"
+              placeholder="Betreff: Bereitstellung FTTB..."
+              value={text}
+              onChange={e => setText(e.target.value)}
+            />
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={handleParseEmail}
+                disabled={!text.trim() || status === "analyzing"}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {status === "analyzing" ? "Analysiere..." : "E-Mail analysieren"}
+              </button>
+            </div>
+          </div>
+
+          {parsed.length > 0 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+              <div className="flex justify-end mt-8">
+                <button
+                  onClick={handleSaveEmail}
+                  disabled={status === "saving"}
+                  className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-lg shadow-green-600/20 flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-6 h-6" />
+                  {status === "saving" ? "Speichere..." : "Alle Auftr‰ge ins CRM importieren"}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === "excel" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 animate-in fade-in">
+          <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 mb-6">
+            <FileSpreadsheet className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-700 mb-2">Alte Abrechnungstabelle hochladen</h3>
+            <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+              Lade deine Excel-Tabellen hoch. Das CRM liest "Kunden Nummer", "WE Lage", "Bemerkung" und die Rechnungspositionen automatisch aus und legt die alten Auftr‰ge als "Abgerechnet" in der Datenbank ab.
+            </p>
+            <label className="bg-white border border-blue-200 text-blue-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 cursor-pointer transition-colors shadow-sm inline-block">
+              Excel-Datei (.xlsx) ausw‰hlen
+              <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleExcelUpload} />
+            </label>
+          </div>
+
+          {excelRows.length > 0 && (
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
+              <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
+                <Info className="w-5 h-5" /> Analyse-Ergebnis
+              </h4>
+              <div className="flex gap-8 mb-6">
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100 flex-1 text-center">
+                  <div className="text-3xl font-black text-blue-600">{excelStats.fttb}</div>
+                  <div className="text-xs font-bold text-gray-500 uppercase">FTTB Zeilen</div>
                 </div>
-                
-                {/* Warnungen / Historien-Check */}
-                {warnings[index] && warnings[index].length > 0 && (
-                  <div className="mb-4 flex flex-col gap-2">
-                    {warnings[index].map((w, wIdx) => {
-                      const isBuilding = w.includes("Geb√§ude");
-                      return (
-                        <div key={wIdx} className={`p-3 rounded-lg flex items-start gap-2 text-sm ${isBuilding ? "bg-amber-50 text-amber-900 border border-amber-200" : "bg-blue-50 text-blue-900 border border-blue-200"}`}>
-                          {isBuilding ? <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" /> : <Info className="w-4 h-4 mt-0.5 text-blue-600 shrink-0" />}
-                          <span className="font-medium">{w}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-gray-50 p-3 rounded-lg">
-                  <div>
-                    <span className="block text-gray-500 text-xs uppercase mb-1">Kd-Nr.</span>
-                    <span className="font-medium">{order.customerNumber || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-500 text-xs uppercase mb-1">Telefon</span>
-                    <span className="font-medium">{order.phone || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-500 text-xs uppercase mb-1">Planfenster</span>
-                    <span className="font-medium">{order.htpPlanfenster || "-"}</span>
-                  </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100 flex-1 text-center">
+                  <div className="text-3xl font-black text-blue-600">{excelStats.bde}</div>
+                  <div className="text-xs font-bold text-gray-500 uppercase">BDE Zeilen</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100 flex-1 text-center">
+                  <div className="text-3xl font-black text-blue-600">{excelStats.total}</div>
+                  <div className="text-xs font-bold text-gray-500 uppercase">Gesamt</div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          <div className="flex justify-end mt-8">
-            <button
-              onClick={handleSave}
-              disabled={status === "saving"}
-              className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-lg shadow-green-600/20 flex items-center gap-2"
-            >
-              <CheckCircle2 className="w-6 h-6" />
-              {status === "saving" ? "Speichere..." : "Alle Auftr√§ge ins CRM importieren"}
-            </button>
-          </div>
+              <button
+                onClick={handleSaveExcel}
+                disabled={excelStatus === "saving"}
+                className="w-full bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-lg shadow-green-600/20 flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-6 h-6" />
+                {excelStatus === "saving" ? "Import l‰uft (Das kann dauern)..." : "Jetzt in die CRM Historie importieren"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

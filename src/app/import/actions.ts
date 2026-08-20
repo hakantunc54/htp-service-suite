@@ -228,7 +228,8 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
                priceToApply = itemVal;
                qty = 1;
             } else {
-               priceToApply = (si.defaultPrice || 0) * qty;
+               const customPrice = (priceOverrides && priceOverrides[targetName] !== undefined) ? priceOverrides[targetName] : (si.defaultPrice || 0);
+                 priceToApply = customPrice * qty;
             }
 
             await prisma.orderServiceItem.create({

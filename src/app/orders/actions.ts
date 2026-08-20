@@ -25,7 +25,9 @@ export async function getServiceItems() {
 export async function saveBilling(
   orderId: string, 
   items: { serviceItemId: string; quantity: number; amount: number }[],
-  totalAmount: number
+  totalAmount: number,
+  apartmentLocation: string = "",
+  technicianRemark: string = ""
 ) {
   // Loesche alte Positionen falls vorhanden
   await prisma.orderServiceItem.deleteMany({
@@ -50,7 +52,9 @@ export async function saveBilling(
     data: {
       isBilled: true,
       orderValue: totalAmount,
-      status: "Erfolgreich abgeschlossen" // Set status to completed automatically when billed
+      status: "Erfolgreich abgeschlossen", // Set status to completed automatically when billed
+      apartmentLocation,
+      technicianRemark
     }
   });
 

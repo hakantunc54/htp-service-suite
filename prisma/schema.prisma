@@ -41,6 +41,8 @@ model Order {
   port            String?   // z.B. "E1/01/05"
   orderType       String?   // TypeScript-Enum: "FTTB Bereitstellung" | "FTTB Entstörung" | "FTTH Bereitstellung" | "FTTH Entstörung" | "BdE (Bau der Endleitung)"
   htpRemark       String?
+  technicianRemark String?  // Bemerkung vom Techniker / Mehraufwand (Phase 1)
+  apartmentLocation String? // WE-Lage (Phase 1)
   
   // Terminabsprache Felder
   vosNumber           String? // z.B. 45644

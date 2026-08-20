@@ -21,7 +21,9 @@ export default function OrdersPage() {
   // Billing Modal State
   const [billingOrder, setBillingOrder] = useState<OrderData | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [optionalValue, setOptionalValue] = useState<number>(0); // For "Optional / Material" which is 1 Euro multiplier
+  const [optionalValue, setOptionalValue] = useState<number>(0);
+  const [apartmentLocation, setApartmentLocation] = useState("");
+  const [technicianRemark, setTechnicianRemark] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -65,6 +67,8 @@ export default function OrdersPage() {
     setBillingOrder(order);
     setQuantities({});
     setOptionalValue(0);
+    setApartmentLocation(order.apartmentLocation || "");
+    setTechnicianRemark(order.technicianRemark || "");
   };
 
   const getRelevantServiceItems = () => {
@@ -158,12 +162,12 @@ export default function OrdersPage() {
 
     const totalAmount = calculateTotal();
     
-    const res = await saveBilling(billingOrder.id, itemsToSave, totalAmount);
-    if (res.success) {
-      toast.success("Abrechnung erfolgreich gespeichert!");
+    try {
+      await saveBilling(billingOrder.id, itemsToSave, totalAmount, apartmentLocation, technicianRemark);
+      toast.success("Auftrag erfolgreich abgerechnet!");
       setBillingOrder(null);
       fetchData();
-    } else {
+    } catch (e) {
       toast.error("Fehler beim Speichern der Abrechnung.");
     }
   };
@@ -260,6 +264,29 @@ export default function OrdersPage() {
             </div>
 
             <div className="p-6 border-t border-gray-200 bg-white sticky bottom-0">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">WE-Lage</label>
+                  <input 
+                    type="text" 
+                    value={apartmentLocation}
+                    onChange={e => setApartmentLocation(e.target.value)}
+                    placeholder="z.B. 2. OG links"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Bemerkung / Mehraufwand</label>
+                  <input 
+                    type="text" 
+                    value={technicianRemark}
+                    onChange={e => setTechnicianRemark(e.target.value)}
+                    placeholder="z.B. Kabelkanal 5m gezogen"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                  />
+                </div>
+              </div>
+
               <div className="flex justify-between items-center mb-6">
                 <span className="text-lg font-medium text-slate-600">Gesamtsumme:</span>
                 <span className="text-3xl font-black text-blue-600">{calculateTotal().toFixed(2)} €</span>

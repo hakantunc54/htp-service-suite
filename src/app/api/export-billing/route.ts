@@ -137,13 +137,13 @@ export async function GET(request: Request) {
           "Strasse": addr.street,
           "Nr": addr.nr,
           "Techniker": order.vehicle,
-          "Port": "", // Not available yet
+          "Port": order.port || "",
           "Kunde Name": order.customer.customerName,
           "Kunden\nNummer": order.customer.customerNumber,
           "Kunde RufNr": order.customer.phone || order.customer.mobile,
-          "Status": order.status,
-          "Bemerkung": order.history[0]?.content || "",
-          "WE\nLage": "",
+          "Status": (getQty("Abbruch") > 0 || getQty("KvHdF") > 0) ? "Abgebrochen" : "Erledigt",
+          "Bemerkung": order.technicianRemark || "",
+          "WE\nLage": order.apartmentLocation || "",
           "FTTB": getQty("FTTB"),
           "Abbruch": getQty("Abbruch"),
           "Anfahrt >12": isFirst && count >= 12 ? 1 : "",
@@ -198,13 +198,13 @@ export async function GET(request: Request) {
           "Strasse": addr.street,
           "Nr": addr.nr,
           "Techniker": order.vehicle,
-          "Port": "",
+          "Port": order.port || "",
           "Kunde Name": order.customer.customerName,
           "Kunden\nNummer": order.customer.customerNumber,
           "Kunde RufNr": order.customer.phone || order.customer.mobile,
-          "Status": order.status,
-          "Bemerkung": order.history[0]?.content || "",
-          "WE\nLage": "",
+          "Status": (getQty("Abbruch") > 0 || getQty("KvHdF") > 0) ? "Abgebrochen" : "Erledigt",
+          "Bemerkung": order.technicianRemark || "",
+          "WE\nLage": order.apartmentLocation || "",
           "Stunden / Material": "",
           "Arbeitszeit": getQty("Arbeitszeit (Std.)"),
           "Anfahrt": isFirst ? 1 : "",
@@ -267,3 +267,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
+

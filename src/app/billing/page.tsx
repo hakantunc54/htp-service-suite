@@ -36,7 +36,39 @@ export default function BillingPage() {
     setLoading(false);
   };
 
+
+  const handlePdfExport = async (type: 'FTTB' | 'BDE') => {
+    if (!startDate || !endDate) {
+      toast.error("Bitte Start- und Enddatum w\u00e4hlen");
+      return;
+    }
+    
+    setIsExporting(true);
+    toast.info("Generiere PDF...");
+    
+    try {
+      const response = await fetch(`/api/export-billing?start=${startDate}&end=${endDate}&format=json`);
+      const data = await response.json();
+      
+      const monthNames = ["Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+      const startD = new Date(startDate);
+      const monthStr = monthNames[startD.getMonth()] + " " + startD.getFullYear();
+      
+      const title = `Leistungsnachweis ${type} - ${monthStr}`;
+      const exportData = type === 'FTTB' ? data.groupedFttb : data.groupedBde;
+      
+      generatePdf(title, exportData, type, data.totals);
+      toast.success("PDF erfolgreich generiert!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Fehler beim PDF Export");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleExport = async () => {
+
     if (!startDate || !endDate) {
       toast.error("Bitte Start- und Enddatum wählen");
       return;

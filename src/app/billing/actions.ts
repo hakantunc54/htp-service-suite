@@ -11,7 +11,8 @@ export async function getBillingData() {
       status: "Erfolgreich abgeschlossen"
     },
     include: {
-      customer: true
+      customer: true,
+      serviceItems: { include: { serviceItem: true } }
     },
     orderBy: {
       updatedAt: 'desc'

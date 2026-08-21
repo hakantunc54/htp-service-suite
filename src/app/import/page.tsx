@@ -94,8 +94,8 @@ export default function ImportPage() {
                if (priceRow[c] && !isNaN(parseFloat(String(priceRow[c]).replace(',', '.')))) {
                   const colName = String(headerRow[c]);
                   const columnMap: Record<string, string> = {
-                    "FTTB": "FTTB", "Abbruch": "Abbruch", "Anfahrt >12": "Anfahrt >12 km",
-                    "Anfahrt\n<12": "Anfahrt <12 km", "Anfahrt\r\n<12": "Anfahrt <12 km", "Anfahrt <12": "Anfahrt <12 km",
+                    "FTTB": "FTTB", "Abbruch": "Abbruch", "Anfahrt >12": "Anfahrt >12",
+                    "Anfahrt\n<12": "Anfahrt <12", "Anfahrt\r\n<12": "Anfahrt <12", "Anfahrt <12": "Anfahrt <12",
                     "MAW (5Min)": "MAW (5Min)", "PCI": "PCI", "vLauiAPLe": "vLauiAPLe",
                     "Warten 5Min": "Warten 5Min", "Warten 10Min": "Warten 10Min",
                     "fZugang DPU/APL": "fZugang DPU/APL", "KvHdF": "KvHdF", "Dispo": "Dispo",

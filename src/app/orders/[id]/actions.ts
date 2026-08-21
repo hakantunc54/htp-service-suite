@@ -44,15 +44,59 @@ export async function updateOrderStatus(orderId: string, status: string, communi
     data
   });
   
-  // Also add a history entry for the status change automatically
   await prisma.historyEntry.create({
     data: {
       orderId,
       type: "STATUS_CHANGE",
-      content: `Status geändert auf: ${status}`
+      content: `Status gendert auf: ${status}`
     }
   });
 
   revalidatePath(`/orders/${orderId}`);
   return { success: true };
+}
+
+export async function cloneOrder(orderId: string) {
+  const originalOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { customer: true }
+  });
+
+  if (!originalOrder) throw new Error("Order not found");
+
+  const newOrder = await prisma.order.create({
+    data: {
+      customerId: originalOrder.customerId,
+      htpPlanfenster: originalOrder.htpPlanfenster,
+      serviceWindow: originalOrder.serviceWindow,
+      project: originalOrder.project,
+      networkElement: originalOrder.networkElement,
+      port: originalOrder.port,
+      orderType: originalOrder.orderType,
+      htpRemark: originalOrder.htpRemark,
+      apartmentLocation: originalOrder.apartmentLocation,
+      status: "Wartet auf HTP",
+      communicationStatus: "NOCH_NICHT",
+      technicianRemark: `Folgeauftrag aus vorherigem Abbruch am ${new Date().toLocaleDateString('de-DE')}`
+    }
+  });
+
+  await prisma.historyEntry.create({
+    data: {
+      orderId: newOrder.id,
+      type: "SYSTEM",
+      content: `Auftrag als Folgeauftrag (Klon) von Original-Auftrag geklont.`
+    }
+  });
+  
+  await prisma.historyEntry.create({
+    data: {
+      orderId: originalOrder.id,
+      type: "SYSTEM",
+      content: `Auftrag wurde abgebrochen und ein Folgeauftrag (Klon) wurde erstellt.`
+    }
+  });
+
+  revalidatePath(`/orders`);
+  return { success: true, newOrderId: newOrder.id };
 }

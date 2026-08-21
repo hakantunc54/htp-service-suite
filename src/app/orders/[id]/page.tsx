@@ -17,6 +17,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [templates, setTemplates] = useState<SmsTemplate[]>([]);
   const [note, setNote] = useState("");
+  const router = useRouter();
+  const [isCloning, setIsCloning] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -83,7 +85,29 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     fetchData();
   };
 
+
+  const handleCloneOrder = async () => {
+    if (!order) return;
+    const confirm = window.confirm("Möchtest du diesen Auftrag abschließen und einen Klon für HTP erstellen?");
+    if (!confirm) return;
+    
+    setIsCloning(true);
+    try {
+      await updateOrderStatus(order.id, "Erfolgreich abgeschlossen", order.communicationStatus);
+      const res = await cloneOrder(order.id);
+      if (res.success) {
+        toast.success("Folgeauftrag (Klon) erfolgreich erstellt!");
+        router.push(`/orders/${res.newOrderId}`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Fehler beim Erstellen des Klon-Auftrags");
+      setIsCloning(false);
+    }
+  };
+
   const handleQuickAction = async (status: string, commStatus?: string) => {
+
     if (!order) return;
     await updateOrderStatus(order.id, status, commStatus);
     toast.success(`Status auf '${status}' gesetzt`);
@@ -137,15 +161,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </button>
           </div>
 
+          
           <h3 className="text-sm font-bold text-gray-800 mb-3">Status Updates (Quick Actions)</h3>
           <div className="flex flex-col gap-2 mb-8">
             <button onClick={() => handleQuickAction(OrderStatus.KUNDE_ERREICHT, CommunicationStatus.ERREICHT)} className="text-left px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg border">
-              ✓ Kunde erreicht
+              📢 Kunde erreicht
             </button>
             <button onClick={() => handleQuickAction(OrderStatus.KUNDE_NICHT_ERREICHT, CommunicationStatus.NICHT_ERREICHT)} className="text-left px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg border">
-              ✕ Kunde nicht erreicht
+              📢 Kunde nicht erreicht
+            </button>
+            
+            <button 
+              onClick={handleCloneOrder} 
+              disabled={isCloning}
+              className="text-left px-4 py-2 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg border border-orange-200 mt-4 font-bold flex items-center gap-2 disabled:opacity-50 transition-colors"
+            >
+              <Copy className="w-4 h-4" /> BDE Abbrechen & Folgeauftrag (Klon) erstellen
             </button>
           </div>
+
 
         </div>
       </div>

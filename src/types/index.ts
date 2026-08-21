@@ -23,7 +23,8 @@ export enum OrderStatus {
   TECHNIKER_BENOETIGT = "Techniker benötigt",
   STORNIERT = "Storniert",
   ABGERECHNET = "Abgerechnet",
-  ARCHIVIERT = "Archiviert"
+  ARCHIVIERT = "Archiviert",
+  WARTET_AUF_HTP = "Wartet auf HTP"
 }
 
 export enum CommunicationStatus {

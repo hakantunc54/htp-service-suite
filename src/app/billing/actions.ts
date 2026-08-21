@@ -12,7 +12,7 @@ export async function getBillingData() {
     },
     include: {
       customer: true,
-      serviceItems: { include: { serviceItem: true } }
+      services: { include: { serviceItem: true } }
     },
     orderBy: {
       updatedAt: 'desc'

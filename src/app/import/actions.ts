@@ -116,9 +116,9 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
     const columnMap: Record<string, string> = {
       "FTTB": "FTTB",
       "Abbruch": "Abbruch",
-      "Anfahrt >12": "Anfahrt >12",
-      "Anfahrt\n<12": "Anfahrt <12", "Anfahrt\r\n<12": "Anfahrt <12", // if they have it like this
-      "Anfahrt <12": "Anfahrt <12",
+      "Anfahrt >12": "Anfahrt >12 km",
+      "Anfahrt\n<12": "Anfahrt <12 km", "Anfahrt\r\n<12": "Anfahrt <12 km", // if they have it like this
+      "Anfahrt <12": "Anfahrt <12 km",
       "MAW (5Min)": "MAW (5Min)",
       "PCI": "PCI",
       "vLauiAPLe": "vLauiAPLe",

@@ -266,15 +266,15 @@ export async function GET(request: Request) {
     // Workbook erstellen
 
     
-    const totals = { fttb: {}, bde: {}, fttbTotal: 0, bdeTotal: 0 };
+    const totals: any = { fttb: {}, bde: {}, fttbTotal: 0, bdeTotal: 0 };
     
     // Add logic to calculate totals based on actual priceApplied
     fttbOrders.forEach(o => {
       o.services.forEach(s => {
         if (!totals.fttb[s.serviceItem.name]) totals.fttb[s.serviceItem.name] = { qty: 0, revenue: 0 };
         totals.fttb[s.serviceItem.name].qty += s.quantity;
-        totals.fttb[s.serviceItem.name].revenue += s.priceApplied;
-        totals.fttbTotal += s.priceApplied;
+        totals.fttb[s.serviceItem.name].revenue += (s.priceApplied || 0);
+        totals.fttbTotal += (s.priceApplied || 0);
       });
     });
 
@@ -282,12 +282,12 @@ export async function GET(request: Request) {
       o.services.forEach(s => {
         if (!totals.bde[s.serviceItem.name]) totals.bde[s.serviceItem.name] = { qty: 0, revenue: 0 };
         totals.bde[s.serviceItem.name].qty += s.quantity;
-        totals.bde[s.serviceItem.name].revenue += s.priceApplied;
-        totals.bdeTotal += s.priceApplied;
+        totals.bde[s.serviceItem.name].revenue += (s.priceApplied || 0);
+        totals.bdeTotal += (s.priceApplied || 0);
       });
     });
 
-    const format = request.nextUrl.searchParams.get('format');
+    const format = new URL(request.url).searchParams.get('format');
     if (format === 'json') {
       return NextResponse.json({ fttb: fttbRows, bde: bdeRows, groupedFttb: groupedFttbRows, groupedBde: groupedBdeRows, totals });
     }

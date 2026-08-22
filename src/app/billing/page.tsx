@@ -1,4 +1,5 @@
 "use client";
+import { generatePdf } from '@/lib/pdfGenerator';
 
 import { useEffect, useState } from "react";
 import { getBillingData } from "./actions";

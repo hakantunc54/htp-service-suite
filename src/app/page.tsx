@@ -1,3 +1,4 @@
+import RevenueChart from '@/components/RevenueChart';
 ﻿import { PrismaClient } from "@prisma/client";
 import { FileText, CalendarCheck, PhoneCall, Euro, Wallet } from "lucide-react";
 
@@ -39,6 +40,37 @@ export default async function Home() {
 
   const openValue = financialData._sum.orderValue || 0;
   const closedValue = billedData._sum.orderValue || 0;
+
+  
+  // All completed orders for the chart
+  const allBilledOrders = await prisma.order.findMany({
+    where: { status: "Erfolgreich abgeschlossen" },
+    select: { orderValue: true, orderType: true, kundenTerminStart: true, updatedAt: true }
+  });
+
+  const monthNames = ["Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+  
+  const chartDataMap: Record<string, any> = {};
+  
+  allBilledOrders.forEach(o => {
+    const date = o.kundenTerminStart || o.updatedAt;
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const key = `${year}-${month}`;
+    
+    if (!chartDataMap[key]) {
+      chartDataMap[key] = { year, month, monthName: monthNames[month], FTTB: 0, BDE: 0 };
+    }
+    
+    const val = o.orderValue || 0;
+    const type = (o.orderType || "").toLowerCase().includes("bde") ? "BDE" : "FTTB";
+    chartDataMap[key][type] += val;
+  });
+
+  const chartData = Object.values(chartDataMap).sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    return a.month - b.month;
+  });
 
   const formatEuro = (value: number) => {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value);
@@ -83,7 +115,13 @@ export default async function Home() {
       </div>
 
       <h2 className="text-xl font-bold mb-4 text-slate-900">Finanzen & Abrechnung</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+        <div className="mb-8">
+          <RevenueChart data={chartData} />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
         
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4 border-l-4 border-l-orange-500">
           <div className="bg-orange-50 p-4 rounded-full text-orange-500">

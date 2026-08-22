@@ -93,7 +93,7 @@ export const generatePdf = (title: string, data: any[], type: 'FTTB' | 'BDE', to
     },
     didParseCell: function (data) {
         // Highlight day separators
-        if (data.row.raw[0] && typeof data.row.raw[0] === 'object' && data.row.raw[0].content === '') {
+        if ((data.row.raw as any)[0] && typeof (data.row.raw as any)[0] === 'object' && (data.row.raw as any)[0].content === '') {
             data.cell.styles.fillColor = [230, 230, 230];
         }
     }

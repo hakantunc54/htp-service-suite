@@ -1,4 +1,3 @@
-"use client";
 import RevenueChart from '@/components/RevenueChart';
 ﻿import { PrismaClient } from "@prisma/client";
 import { FileText, CalendarCheck, PhoneCall, Euro, Wallet } from "lucide-react";

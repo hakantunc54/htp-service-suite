@@ -112,7 +112,7 @@ model OrderServiceItem {
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   serviceItemId String
   serviceItem   ServiceItem @relation(fields: [serviceItemId], references: [id])
-  quantity      Int      @default(1)
+  quantity      Float    @default(1)
   priceApplied  Float?   // Tatsächlich berechneter Preis für diese Leistung
 }
 

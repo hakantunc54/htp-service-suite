@@ -27,7 +27,9 @@ export async function saveBilling(
   items: { serviceItemId: string; quantity: number; amount: number }[],
   totalAmount: number,
   apartmentLocation: string = "",
-  technicianRemark: string = ""
+  technicianRemark: string = "",
+  bdeStatus?: string,
+  materialDetails?: string
 ) {
   // Loesche alte Positionen falls vorhanden
   await prisma.orderServiceItem.deleteMany({

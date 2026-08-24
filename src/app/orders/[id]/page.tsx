@@ -43,9 +43,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     setLoading(false);
   };
 
-  const handleSaveServices = async (newServices: any[], newRemark?: string) => {
+  const handleSaveServices = async (newServices: any[], newRemark?: string, newBdeStatus?: string, newMaterialDetails?: string) => {
     if (!order) return;
-    const res = await updateOrderServices(order.id, newServices, newRemark);
+    const res = await updateOrderServices(order.id, newServices, newRemark, newBdeStatus, newMaterialDetails);
     if (res.success) {
       toast.success("Leistungen & Bemerkung erfolgreich aktualisiert!");
       await fetchData();
@@ -383,6 +383,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         currentServices={order.services}
         onSave={handleSaveServices}
         currentRemark={order.technicianRemark || ""}
+        currentBdeStatus={order.bdeStatus || ""}
+        currentMaterialDetails={order.materialDetails || ""}
       />
     </div>
   );

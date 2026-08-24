@@ -42,6 +42,8 @@ model Order {
   orderType       String?   // TypeScript-Enum: "FTTB Bereitstellung" | "FTTB Entstörung" | "FTTH Bereitstellung" | "FTTH Entstörung" | "BdE (Bau der Endleitung)"
   htpRemark       String?
   technicianRemark String?  // Bemerkung vom Techniker / Mehraufwand (Phase 1)
+  bdeStatus           String?
+  materialDetails     String?
   apartmentLocation String? // WE-Lage (Phase 1)
   
   // Terminabsprache Felder

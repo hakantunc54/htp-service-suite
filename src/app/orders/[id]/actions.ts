@@ -28,7 +28,7 @@ export async function getAvailableServiceItems() {
   });
 }
 
-export async function updateOrderServices(orderId: string, servicesToSave: { serviceItemId: string, quantity: number, priceApplied: number }[], newRemark?: string) {
+export async function updateOrderServices(orderId: string, servicesToSave: { serviceItemId: string, quantity: number, priceApplied: number }[], newRemark?: string, newBdeStatus?: string, newMaterialDetails?: string) {
   // First, calculate new order value
   const newOrderValue = servicesToSave.reduce((sum, item) => sum + (item.priceApplied * item.quantity), 0);
 
@@ -56,7 +56,9 @@ export async function updateOrderServices(orderId: string, servicesToSave: { ser
       where: { id: orderId },
       data: { 
         orderValue: newOrderValue,
-        ...(newRemark !== undefined && { technicianRemark: newRemark })
+        ...(newRemark !== undefined && { technicianRemark: newRemark }),
+        ...(newBdeStatus !== undefined && { bdeStatus: newBdeStatus }),
+        ...(newMaterialDetails !== undefined && { materialDetails: newMaterialDetails })
       }
     });
     

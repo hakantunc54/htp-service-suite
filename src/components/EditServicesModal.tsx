@@ -24,17 +24,30 @@ interface EditServicesModalProps {
   onClose: () => void;
   currentServices: OrderService[];
   availableItems: ServiceItem[];
-  onSave: (newServices: any[], newRemark?: string) => Promise<void>;
+  onSave: (newServices: any[], newRemark?: string, newBdeStatus?: string, newMaterialDetails?: string) => Promise<void>;
   orderType: string;
   currentRemark?: string;
+  currentBdeStatus?: string;
+  currentMaterialDetails?: string;
 }
 
-export function EditServicesModal({ isOpen, onClose, orderId, orderType, availableItems, currentServices, onSave, currentRemark }: EditServicesModalProps) {
+export function EditServicesModal({ isOpen, onClose, orderId, orderType, availableItems, currentServices, onSave, currentRemark, currentBdeStatus, currentMaterialDetails }: EditServicesModalProps) {
   const [remark, setRemark] = useState(currentRemark || "");
+  const [bdeStatus, setBdeStatus] = useState(currentBdeStatus || "BDE erledigt - neuer Bautermin erforderlich");
+  const [materialDetails, setMaterialDetails] = useState(currentMaterialDetails || `Zeitaufwand: 1 Techniker 2,00 Std.
+Materialaufwand: 
+- 10m ISTY (15,00 EUR)
+- 5m Verlegematerial (7,50 EUR)
+- 1 x TAE Dose AP (15 EUR)`);
 
   useEffect(() => {
     setRemark(currentRemark || "");
-  }, [currentRemark, isOpen]);
+    if (currentBdeStatus) setBdeStatus(currentBdeStatus);
+    if (currentMaterialDetails) setMaterialDetails(currentMaterialDetails);
+  }, [currentRemark, currentBdeStatus, currentMaterialDetails, isOpen]);
+  
+  const isBDE = (orderType || "").toLowerCase().includes("bde") || (orderType || "").toLowerCase().includes("endleitung");
+  
   const [editedServices, setEditedServices] = useState<OrderService[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -106,7 +119,7 @@ export function EditServicesModal({ isOpen, onClose, orderId, orderType, availab
           serviceItemId: s.serviceItemId,
           quantity: s.quantity,
           priceApplied: s.priceApplied || 0
-        })), remark);
+        })), remark, isBDE ? bdeStatus : undefined, isBDE ? materialDetails : undefined);
       onClose();
     } catch (e) {
       toast.error("Fehler beim Speichern");
@@ -186,7 +199,35 @@ export function EditServicesModal({ isOpen, onClose, orderId, orderType, availab
             })}
           </div>
             
-            <div className="mt-6">
+            {isBDE && (
+              <>
+                <div className="mt-6 border-t border-gray-100 pt-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">BDE Status (f�r Excel-Export)</label>
+                  <select 
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    value={bdeStatus}
+                    onChange={(e) => setBdeStatus(e.target.value)}
+                  >
+                    <option value="BDE erledigt - neuer Bautermin erforderlich">BDE erledigt - neuer Bautermin erforderlich</option>
+                    <option value="BDE erledigt - TAL in Betrieb">BDE erledigt - TAL in Betrieb</option>
+                    <option value="Abbruch">Abbruch</option>
+                  </select>
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Stunden / Material (f�r Excel-Export)</label>
+                  <textarea 
+                    rows={6}
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                    value={materialDetails}
+                    onChange={(e) => setMaterialDetails(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Dieser Text wird 1:1 in die Spalte "Stunden / Material" exportiert.</p>
+                </div>
+              </>
+            )}
+            
+            <div className="mt-6 border-t border-gray-100 pt-6">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Bemerkung zur Abrechnung</label>
               <textarea 
                 rows={3}

@@ -19,8 +19,13 @@ export default async function Home() {
 
   const callbacksToday = await prisma.order.count({
     where: {
-      status: { in: ["Kunde nicht erreicht", "Kunde hat zurückgerufen", "Neu"] },
-      communicationStatus: { notIn: ["Termin bestätigt"] }
+      OR: [
+        { status: "Neu", kundenTerminStart: null },
+        { status: "Kunde nicht erreicht" },
+        { status: "Kunde hat zur�ckgerufen" },
+        { status: "Kunde hat zurOckgerufen" }
+      ],
+      communicationStatus: { notIn: ["Termin best�tigt", "Termin besttigt"] }
     }
   });
 

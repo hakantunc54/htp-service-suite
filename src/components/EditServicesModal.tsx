@@ -191,7 +191,7 @@ export function EditServicesModal({ isOpen, onClose, orderId, orderType, availab
               <textarea 
                 rows={3}
                 className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                placeholder="Optionale Bemerkung f�r diesen Auftrag (erscheint im Export)..."
+                placeholder="Optionale Bemerkung für diesen Auftrag (erscheint im Export)..."
                 value={remark}
                 onChange={(e) => setRemark(e.target.value)}
               />

@@ -105,8 +105,13 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
           address = line.substring(17).trim();
         }
         else if (line.toLowerCase().startsWith('port:')) {
-          port = line.substring(5).trim();
-        }
+            port = line.substring(5).trim();
+          } else if (line.toLowerCase().startsWith('netzelement:')) {
+            port = line.substring(12).trim();
+          } else if (line.toLowerCase().includes('port') && !port) {
+            const match = line.match(/(?:port|netzelement)\s*[:\-]?\s*([a-zA-Z0-9\-\/\.]+)/i);
+            if (match) port = match[1];
+          }
       }
 
       let mappedType = OrderType.BDE; 

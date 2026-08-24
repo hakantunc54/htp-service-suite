@@ -102,7 +102,9 @@ export default function ImportPage() {
                     "optional": "Optional / Material (FTTB)", "Arbeitszeit": "Arbeitszeit (Std.)", "Material": "Material (BDE)",
                   };
                   let targetName = columnMap[colName];
-                  if (colName === "optional" && sheetName.toUpperCase().includes("BDE")) targetName = "Optional (BDE)";
+                  const hdrStr = JSON.stringify(headerRow).toUpperCase();
+                    const isBdeSheet = sheetName.toUpperCase().includes("BDE") || hdrStr.includes("ARBEITSZEIT") || hdrStr.includes("MATERIAL");
+                    if (colName === "optional" && isBdeSheet) targetName = "Optional (BDE)";
                   if (targetName) {
                      localOverrides[targetName] = parseFloat(String(priceRow[c]).replace(',', '.'));
                   }
@@ -114,7 +116,8 @@ export default function ImportPage() {
             // Generiere JSON ab der gefundenen Header-Zeile
             const data = xlsx.utils.sheet_to_json(ws, { range: headerRowIndex });
             
-            const isBde = sheetName.toUpperCase().includes('BDE');
+            const headerStr = JSON.stringify(rawData[headerRowIndex] || []).toUpperCase();
+              const isBde = sheetName.toUpperCase().includes("BDE") || headerStr.includes("ARBEITSZEIT") || headerStr.includes("MATERIAL");
             const isFttb = sheetName.toUpperCase().includes('FTTB');
             
             data.forEach((r: any) => r._SourceType = isBde ? "BDE" : "FTTB");

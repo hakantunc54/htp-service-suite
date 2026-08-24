@@ -167,7 +167,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div className="bg-white border border-gray-200 p-4 rounded-xl mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Erfasste Leistungen</h3>
-              {(!order.isBilled) && (
+              {true && (
                 <button 
                   onClick={() => setIsServicesModalOpen(true)}
                   className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded"

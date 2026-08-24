@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Plus, Minus, Check, AlertTriangle } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 interface ServiceItem {
   id: string;
@@ -14,7 +14,7 @@ interface ServiceItem {
 interface OrderService {
   serviceItemId: string;
   quantity: number;
-  priceApplied: number;
+  priceApplied: number | null;
   serviceItem?: ServiceItem;
 }
 
@@ -80,7 +80,7 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
   const conflict = hasFttb && (hasKvhdf || hasKeinZugang);
 
   const calculateTotal = () => {
-    return editedServices.reduce((sum, item) => sum + (item.priceApplied * item.quantity), 0);
+    return editedServices.reduce((sum, item) => sum + ((item.priceApplied || 0) * item.quantity), 0);
   };
 
   const handleSaveClick = async () => {
@@ -94,7 +94,7 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
       await onSave(editedServices.map(s => ({
         serviceItemId: s.serviceItemId,
         quantity: s.quantity,
-        priceApplied: s.priceApplied
+        priceApplied: s.priceApplied || 0
       })));
       onClose();
     } catch (e) {
@@ -119,7 +119,7 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
             <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 flex items-start gap-3 border border-red-200">
               <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div className="text-sm">
-                <strong>Logik-Konflikt!</strong> Du hast eine FTTB-Installation ausgewählt UND gleichzeitig einen Abbruch (KvHdF oder Kein Zugang). Bitte korrigiere die Auswahl!
+                <strong>Logik-Konflikt!</strong> Du hast eine FTTB-Installation ausgewhlt UND gleichzeitig einen Abbruch (KvHdF oder Kein Zugang). Bitte korrigiere die Auswahl!
               </div>
             </div>
           )}

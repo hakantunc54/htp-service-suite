@@ -300,7 +300,7 @@ export default function PlanningPage() {
                   onChange={(e) => handleAssign(order.id, e.target.value)}
                 >
                   <option value="" disabled>Auto zuweisen...</option>
-                  {vehicles.filter(v => (order.orderType || '').includes('BdE') ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
+                  {vehicles.filter(v => ((order.orderType || '').toLowerCase().includes('bde') || (order.orderType || '').toLowerCase().includes('endleitung') || order.vosNumber) ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
                     <option key={v} value={v}>{v}</option>
                   ))}
                 </select>
@@ -366,7 +366,7 @@ export default function PlanningPage() {
                     >
                       <option value="" disabled>Auto zuweisen...</option>
                       <option value="none">-- Zurück in Pool --</option>
-                      {vehicles.filter(v => (order.orderType || '').includes('BdE') ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
+                      {vehicles.filter(v => ((order.orderType || '').toLowerCase().includes('bde') || (order.orderType || '').toLowerCase().includes('endleitung') || order.vosNumber) ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
                         <option key={v} value={v}>{v}</option>
                       ))}
                     </select>

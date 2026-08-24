@@ -143,6 +143,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <p className="text-slate-800">{order.customer.address}</p>
           </div>
 
+          {order.technicianRemark && (
+            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-xl mb-6">
+              <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Bemerkung</h3>
+              <p className="text-slate-800 text-sm whitespace-pre-wrap">{order.technicianRemark}</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button 
               onClick={handleCall}

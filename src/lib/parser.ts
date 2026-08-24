@@ -45,6 +45,11 @@ export function parseHtpEmail(text: string): ParsedOrder[] {
         else if (lower.startsWith('kontaktrufnummer:')) phone = line.substring(17).trim();
         else if (lower.startsWith('breitbandtechnik:')) broadbandTechnology = line.substring(17).trim();
         else if (lower.startsWith('port:')) port = line.substring(5).trim();
+          else if (lower.startsWith('netzelement:')) port = line.substring(12).trim();
+          else if (lower.includes('port') && !port) {
+            const match = line.match(/(?:port|netzelement)\s*[:\-]?\s*([a-zA-Z0-9\-\/\.]+)/i);
+            if (match) port = match[1];
+          }
       }
       
       if (customerName || address) {

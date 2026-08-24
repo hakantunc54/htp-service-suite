@@ -99,7 +99,7 @@ export default function ImportPage() {
                     "MAW (5Min)": "MAW (5Min)", "PCI": "PCI", "vLauiAPLe": "vLauiAPLe",
                     "Warten 5Min": "Warten 5Min", "Warten 10Min": "Warten 10Min",
                     "fZugang DPU/APL": "fZugang DPU/APL", "KvHdF": "KvHdF", "Dispo": "Dispo",
-                    "optional": "Optional / Material (FTTB)", "Arbeitszeit": "Arbeitszeit (Std.)", "Material": "Material (BDE)",
+                    "optional": "Optional / Material (FTTB)", "Arbeitszeit": "Arbeitszeit (Std.)", "Material": "Material (BDE)", "Anfahrt": "Anfahrt (BDE)",
                   };
                   let targetName = columnMap[colName];
                   const hdrStr = JSON.stringify(headerRow).toUpperCase();

@@ -130,7 +130,27 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
           )}
 
           <div className="space-y-4">
-            {availableItems.filter(item => item.category === 'ALL' || orderType.includes(item.category)).map(item => {
+            
+            {(() => {
+              const isBDE = (orderType || "").toLowerCase().includes("bde") || (orderType || "").toLowerCase().includes("endleitung");
+              const category = isBDE ? "BDE" : "FTTB";
+              
+              const bdeOrder = ["Arbeitszeit (Std.)", "Material (BDE)", "Optional (BDE)"];
+              const fttbOrder = ["FTTB", "Abbruch", "MAW (5Min)", "PCI", "vLauiAPLe", "Warten 5Min", "Warten 10Min", "fZugang DPU/APL", "KvHdF", "Dispo", "Optional / Material (FTTB)"];
+              const sortOrder = isBDE ? bdeOrder : fttbOrder;
+              
+              return availableItems
+                .filter(item => item.category === category)
+                .filter(item => !item.name.toLowerCase().includes("anfahrt"))
+                .sort((a, b) => {
+                  const indexA = sortOrder.indexOf(a.name);
+                  const indexB = sortOrder.indexOf(b.name);
+                  if (indexA === -1) return 1;
+                  if (indexB === -1) return -1;
+                  return indexA - indexB;
+                });
+  
+            })().map(item => {
               const current = editedServices.find(s => s.serviceItemId === item.id);
               const qty = current ? current.quantity : 0;
               

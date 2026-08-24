@@ -1,6 +1,15 @@
 const fs = require('fs');
-const file = 'src/components/EditServicesModal.tsx';
-// Read it as a buffer
-const buf = fs.readFileSync(file);
-// Convert to string assuming it might be latin1 or whatever, but actually it's just normal characters except for the euro sign maybe?
-// Wait, if it has a BOM or Windows-1252, let's just let Node read it as utf8 (which might fail if it's invalid) or just overwrite the file entirely from a clean script string!
+let code = fs.readFileSync('src/app/orders/[id]/page.tsx', 'utf8');
+
+// Replace the corrupted string
+code = code.replace('f\ufffd\ufffdr', 'f\u00fcr');
+code = code.replace('f\ufffdr', 'f\u00fcr');
+code = code.replace('f\uFFFD\uFFFDr', 'f\u00fcr');
+code = code.replace('f\uFFFDr', 'f\u00fcr');
+
+// Just to be absolutely safe, let's replace by exact string matching the current text
+code = code.replace(/Abbruch & Neu klonen \(f.*?2\. Anfahrt\)/g, 'Abbruch & Neu klonen (f\u00fcr 2. Anfahrt)');
+code = code.replace(/Auftrag klonen \(f.*? neuen Termin nach Abbruch\)/g, 'Auftrag klonen (f\u00fcr neuen Termin nach Abbruch)');
+
+fs.writeFileSync('src/app/orders/[id]/page.tsx', code, 'utf8');
+console.log("Fixed encoding");

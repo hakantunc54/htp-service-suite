@@ -266,7 +266,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </>
           )}
 
-          {/* Der Klon-Button f�r BDEs ist immer sichtbar, auch wenn abgerechnet wurde */}
+          {/* Der Klon-Button für BDEs ist immer sichtbar, auch wenn abgerechnet wurde */}
           {(order.orderType || "").toLowerCase().includes("bde") && (
             <div className="mt-6 mb-8">
               <h3 className="text-sm font-bold text-gray-800 mb-3">Auftrag abgebrochen?</h3>
@@ -275,7 +275,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 disabled={isCloning}
                 className="w-full text-left px-4 py-3 text-sm bg-red-50 text-red-700 hover:bg-red-100 rounded-xl border border-red-200 font-bold flex items-center gap-2 disabled:opacity-50 transition-colors"
               >
-                <Copy className="w-5 h-5" /> Abbruch & Neu klonen (f�r 2. Anfahrt)
+                <Copy className="w-5 h-5" /> Abbruch & Neu klonen (für 2. Anfahrt)
               </button>
               <p className="text-xs text-gray-500 mt-2 ml-1">
                 Erstellt eine exakte Kopie dieses Auftrags in der Disposition (ohne die bisher abgerechneten Leistungen), um einen neuen Termin zu vereinbaren.

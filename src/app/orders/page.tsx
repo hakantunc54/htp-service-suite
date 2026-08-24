@@ -133,8 +133,8 @@ function OrdersContent() {
     const hasFTTB = fttbId ? (quantities[fttbId] || 0) > 0 : false;
     const hasAbbruch = abbruchId ? (quantities[abbruchId] || 0) > 0 : false;
     
-    if (hasFTTB && ["Abbruch", "KvHdF"].includes(itemName)) return true;
-    if (hasAbbruch && ["FTTB", "PCI", "vLauiAPLe", "fZugang DPU/APL"].includes(itemName)) return true;
+    if (hasFTTB && ["Abbruch", "KvHdF", "fZugang DPU/APL"].includes(itemName)) return true;
+    if (hasAbbruch && ["FTTB", "PCI", "vLauiAPLe"].includes(itemName)) return true;
     return false;
   };
 

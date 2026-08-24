@@ -76,8 +76,13 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
     const si = availableItems.find(i => i.id === s.serviceItemId);
     return si && si.name === "fZugang DPU/APL";
   });
+  
+  const hasAbbruch = editedServices.some(s => {
+    const si = availableItems.find(i => i.id === s.serviceItemId);
+    return si && si.name === "Abbruch";
+  });
 
-  const conflict = hasFttb && (hasKvhdf || hasKeinZugang);
+  const conflict = hasFttb && (hasKvhdf || hasKeinZugang || hasAbbruch);
 
   const calculateTotal = () => {
     return editedServices.reduce((sum, item) => sum + ((item.priceApplied || 0) * item.quantity), 0);

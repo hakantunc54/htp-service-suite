@@ -20,7 +20,7 @@ RUN npx prisma generate
 ENV DATABASE_URL="file:./dev.db"
 
 # Schema in die temporäre Build-Datenbank pushen (für Prerendering)
-RUN npx prisma db push
+RUN npx prisma db push --accept-data-loss
 
 # Build Next.js app
 RUN npm run build
@@ -29,4 +29,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Start command: Apply migrations (push) and start the server
-CMD ["sh", "-c", "npx prisma db push && npm start"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]

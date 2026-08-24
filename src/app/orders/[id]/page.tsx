@@ -3,12 +3,13 @@ import { useRouter } from 'next/navigation';
 import { Copy } from 'lucide-react';
 
 import { useEffect, useState } from "react";
-import { getOrderDetails, getSmsTemplates, addHistoryEntry, updateOrderStatus, cloneOrder } from "./actions";
-import { Phone, MessageSquare, ArrowLeft, Clock, Send, CheckCircle2, AlertTriangle, CheckSquare } from "lucide-react";
+import { getOrderDetails, getSmsTemplates, addHistoryEntry, updateOrderStatus, cloneOrder, getAvailableServiceItems, updateOrderServices } from "./actions";
+import { Phone, MessageSquare, ArrowLeft, Clock, Send, CheckCircle2, AlertTriangle, CheckSquare, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { OrderStatus, CommunicationStatus } from "@/types";
 import { use } from "react";
 import { toast } from "sonner";
+import { EditServicesModal } from "@/components/EditServicesModal";
 
 type OrderDetail = NonNullable<Awaited<ReturnType<typeof getOrderDetails>>>;
 type SmsTemplate = Awaited<ReturnType<typeof getSmsTemplates>>[0];
@@ -18,6 +19,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const resolvedParams = use(params);
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [templates, setTemplates] = useState<SmsTemplate[]>([]);
+  const [availableItems, setAvailableItems] = useState<any[]>([]);
+  const [isServicesModalOpen, setIsServicesModalOpen] = useState(false);
   const [note, setNote] = useState("");
   const router = useRouter();
   const [isCloning, setIsCloning] = useState(false);
@@ -29,13 +32,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const fetchData = async () => {
     setLoading(true);
-    const [orderData, templatesData] = await Promise.all([
+    const [orderData, templatesData, itemsData] = await Promise.all([
       getOrderDetails(resolvedParams.id),
-      getSmsTemplates()
+      getSmsTemplates(),
+      getAvailableServiceItems()
     ]);
     setOrder(orderData);
     setTemplates(templatesData);
+    setAvailableItems(itemsData);
     setLoading(false);
+  };
+
+  const handleSaveServices = async (newServices: any[]) => {
+    if (!order) return;
+    const res = await updateOrderServices(order.id, newServices);
+    if (res.success) {
+      toast.success("Leistungen erfolgreich aktualisiert!");
+      await fetchData();
+    }
   };
 
   const handleSmsAction = async (templateName: string) => {
@@ -150,6 +164,37 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
 
+          <div className="bg-white border border-gray-200 p-4 rounded-xl mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Erfasste Leistungen</h3>
+              {(!order.isBilled) && (
+                <button 
+                  onClick={() => setIsServicesModalOpen(true)}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded"
+                >
+                  <Settings2 className="w-3 h-3" /> Bearbeiten
+                </button>
+              )}
+            </div>
+            
+            {order.services.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">Keine Leistungen hinterlegt</p>
+            ) : (
+              <ul className="space-y-2">
+                {order.services.map(s => (
+                  <li key={s.id} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0 last:pb-0">
+                    <span className="text-slate-700"><span className="font-medium text-slate-500 mr-2">{s.quantity}x</span> {s.serviceItem.name}</span>
+                    <span className="font-mono text-slate-600">{(s.priceApplied * s.quantity).toFixed(2).replace('.', ',')} €</span>
+                  </li>
+                ))}
+                <li className="flex justify-between items-center text-sm pt-2 mt-2 border-t border-gray-100 font-bold">
+                  <span className="text-slate-800">Gesamt</span>
+                  <span className="font-mono text-blue-600">{(order.orderValue || 0).toFixed(2).replace('.', ',')} €</span>
+                </li>
+              </ul>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button 
               onClick={handleCall}
@@ -263,6 +308,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
+      <EditServicesModal
+        isOpen={isServicesModalOpen}
+        onClose={() => setIsServicesModalOpen(false)}
+        orderId={order.id}
+        orderType={order.orderType || ""}
+        availableItems={availableItems}
+        currentServices={order.services}
+        onSave={handleSaveServices}
+      />
     </div>
   );
 }

@@ -12,9 +12,63 @@ export async function getOrderDetails(id: string) {
       customer: true,
       history: {
         orderBy: { createdAt: 'asc' }
+      },
+      services: {
+        include: {
+          serviceItem: true
+        }
       }
     }
   });
+}
+
+export async function getAvailableServiceItems() {
+  return await prisma.serviceItem.findMany({
+    orderBy: { name: 'asc' }
+  });
+}
+
+export async function updateOrderServices(orderId: string, servicesToSave: { serviceItemId: string, quantity: number, priceApplied: number }[]) {
+  // First, calculate new order value
+  const newOrderValue = servicesToSave.reduce((sum, item) => sum + (item.priceApplied * item.quantity), 0);
+
+  // Use a transaction to delete old services, insert new ones, and update order value
+  await prisma.$transaction(async (tx) => {
+    // Delete existing
+    await tx.orderServiceItem.deleteMany({
+      where: { orderId }
+    });
+
+    // Create new
+    if (servicesToSave.length > 0) {
+      await tx.orderServiceItem.createMany({
+        data: servicesToSave.map(s => ({
+          orderId,
+          serviceItemId: s.serviceItemId,
+          quantity: s.quantity,
+          priceApplied: s.priceApplied
+        }))
+      });
+    }
+
+    // Update order value
+    await tx.order.update({
+      where: { id: orderId },
+      data: { orderValue: newOrderValue }
+    });
+    
+    // Add history entry
+    await tx.historyEntry.create({
+      data: {
+        orderId,
+        type: "SYSTEM",
+        content: `Abgerechnete Leistungen wurden bearbeitet (Neuer Gesamtwert: ${newOrderValue.toFixed(2).replace('.', ',')} EUR)`
+      }
+    });
+  });
+
+  revalidatePath(`/orders/${orderId}`);
+  return { success: true, newOrderValue };
 }
 
 export async function getSmsTemplates() {

@@ -45,7 +45,7 @@ export default async function Home() {
   // All completed orders for the chart
   const allBilledOrders = await prisma.order.findMany({
     where: { status: "Erfolgreich abgeschlossen" },
-    select: { orderValue: true, orderType: true, kundenTerminStart: true, updatedAt: true }
+    select: { orderValue: true, orderType: true, kundenTerminStart: true, updatedAt: true, vosNumber: true }
   });
 
   const monthNames = ["Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];

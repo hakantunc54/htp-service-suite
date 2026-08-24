@@ -33,7 +33,7 @@ interface EditServicesModalProps {
 
 export function EditServicesModal({ isOpen, onClose, orderId, orderType, availableItems, currentServices, onSave, currentRemark, currentBdeStatus, currentMaterialDetails }: EditServicesModalProps) {
   const [remark, setRemark] = useState(currentRemark || "");
-  const [bdeStatus, setBdeStatus] = useState(currentBdeStatus || "BDE erledigt - neuer Bautermin erforderlich");
+  const [bdeStatus, setBdeStatus] = useState(currentBdeStatus || "BDE erledigt - neuer BT erforderlich");
   const [materialDetails, setMaterialDetails] = useState(currentMaterialDetails || `Zeitaufwand: 1 Techniker 2,00 Std.
 Materialaufwand: 
 - 10m ISTY (15,00 EUR)
@@ -202,20 +202,20 @@ Materialaufwand:
             {isBDE && (
               <>
                 <div className="mt-6 border-t border-gray-100 pt-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">BDE Status (f�r Excel-Export)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">BDE Status (für Excel-Export)</label>
                   <select 
                     className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                     value={bdeStatus}
                     onChange={(e) => setBdeStatus(e.target.value)}
                   >
-                    <option value="BDE erledigt - neuer Bautermin erforderlich">BDE erledigt - neuer Bautermin erforderlich</option>
+                    <option value="BDE erledigt - neuer BT erforderlich">BDE erledigt - neuer BT erforderlich</option>
                     <option value="BDE erledigt - TAL in Betrieb">BDE erledigt - TAL in Betrieb</option>
                     <option value="Abbruch">Abbruch</option>
                   </select>
                 </div>
                 
                 <div className="mt-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Stunden / Material (f�r Excel-Export)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Stunden / Material (für Excel-Export)</label>
                   <textarea 
                     rows={6}
                     className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none resize-none"

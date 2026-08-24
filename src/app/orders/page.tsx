@@ -30,7 +30,7 @@ function OrdersContent() {
   const [optionalValue, setOptionalValue] = useState<number>(0);
   const [apartmentLocation, setApartmentLocation] = useState("");
   const [technicianRemark, setTechnicianRemark] = useState("");
-  const [bdeStatus, setBdeStatus] = useState("BDE erledigt - neuer Bautermin erforderlich");
+  const [bdeStatus, setBdeStatus] = useState("BDE erledigt - neuer BT erforderlich");
   const [materialDetails, setMaterialDetails] = useState("Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
 
   useEffect(() => {
@@ -80,7 +80,7 @@ function OrdersContent() {
     setOptionalValue(0);
     setApartmentLocation(order.apartmentLocation || "");
     setTechnicianRemark(order.technicianRemark || "");
-      setBdeStatus(order.bdeStatus || "BDE erledigt - neuer Bautermin erforderlich");
+      setBdeStatus(order.bdeStatus || "BDE erledigt - neuer BT erforderlich");
       setMaterialDetails(order.materialDetails || "Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
   };
 
@@ -292,19 +292,19 @@ function OrdersContent() {
                 {isBDE && (
                   <>
                     <div className="mb-4">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">BDE Status (f�r Excel)</label>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">BDE Status (für Excel)</label>
                       <select 
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none text-sm bg-white"
                         value={bdeStatus}
                         onChange={(e) => setBdeStatus(e.target.value)}
                       >
-                        <option value="BDE erledigt - neuer Bautermin erforderlich">BDE erledigt - neuer Bautermin erforderlich</option>
+                        <option value="BDE erledigt - neuer BT erforderlich">BDE erledigt - neuer BT erforderlich</option>
                         <option value="BDE erledigt - TAL in Betrieb">BDE erledigt - TAL in Betrieb</option>
                         <option value="Abbruch">Abbruch</option>
                       </select>
                     </div>
                     <div className="mb-4">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Stunden / Material (f�r Excel)</label>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Stunden / Material (für Excel)</label>
                       <textarea 
                         value={materialDetails}
                         onChange={e => setMaterialDetails(e.target.value)}

@@ -63,7 +63,8 @@ export default async function Home() {
     }
     
     const val = o.orderValue || 0;
-    const type = (o.orderType || "").toLowerCase().includes("bde") ? "BDE" : "FTTB";
+    const isBDE = (o.orderType || "").toLowerCase().includes("bde") || (o.orderType || "").toLowerCase().includes("endleitung") || o.vosNumber;
+      const type = isBDE ? "BDE" : "FTTB";
     chartDataMap[key][type] += val;
   });
 

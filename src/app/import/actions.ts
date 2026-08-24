@@ -194,19 +194,29 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
       }
 
       // 2. Order anlegen (als Abgeschlossen)
+            // Wir schauen, ob es irgendwelche Leistungs-Werte in der Zeile gibt
+      let hasBillingItems = false;
+      for (const [colName, val] of Object.entries(row)) {
+        if (columnMap[colName] && Number(val) > 0) hasBillingItems = true;
+      }
+
+      // Wenn Leistungen da sind -> Abgeschlossen. Wenn nicht -> Termin vereinbart (bereit zur Abrechnung!)
+      const initialStatus = hasBillingItems ? "Erfolgreich abgeschlossen" : "Termin vereinbart";
+      const initialBilled = hasBillingItems;
+
       const order = await prisma.order.create({
         data: {
           customerId: customer.id,
           orderType,
-          status: "Erfolgreich abgeschlossen",
+          status: initialStatus,
           communicationStatus: "NOCH_NICHT",
           kundenTerminStart: termin,
           vehicle,
           port,
           technicianRemark: bem,
           apartmentLocation: weLage,
-          isBilled: true,
-          orderValue: 0 // Wird gleich berechnet
+          isBilled: initialBilled,
+          orderValue: 0
         }
       });
 

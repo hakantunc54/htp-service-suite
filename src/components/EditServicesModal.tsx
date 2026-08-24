@@ -40,23 +40,23 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
 
   if (!isOpen) return null;
 
-  const handleUpdateQuantity = (itemId: string, defaultPrice: number | null, change: number) => {
+  const handleSetQuantity = (itemId: string, defaultPrice: number | null, rawValue: string) => {
+    // Erlaube leere Eingaben whrend des Tippens (werden als 0 gewertet)
+    const val = rawValue.trim() === '' ? 0 : parseFloat(rawValue.replace(',', '.'));
+    const qty = isNaN(val) ? 0 : val;
+
     setEditedServices(prev => {
       const existingIdx = prev.findIndex(s => s.serviceItemId === itemId);
       let newServices = [...prev];
       
       if (existingIdx >= 0) {
-        const item = newServices[existingIdx];
-        item.quantity += change;
-        if (item.quantity <= 0) {
+        if (qty <= 0) {
           newServices.splice(existingIdx, 1);
+        } else {
+          newServices[existingIdx].quantity = qty;
         }
-      } else if (change > 0) {
-        newServices.push({
-          serviceItemId: itemId,
-          quantity: 1,
-          priceApplied: defaultPrice || 0
-        });
+      } else if (qty > 0) {
+        newServices.push({ serviceItemId: itemId, quantity: qty, priceApplied: defaultPrice || 0 });
       }
       return newServices;
     });
@@ -164,22 +164,17 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
                     <div className="text-xs text-gray-500">{item.defaultPrice?.toFixed(2).replace('.', ',')} EUR</div>
                   </div>
                   
-                  <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-1">
-                    <button 
-                        onClick={() => handleUpdateQuantity(item.id, item.defaultPrice, item.name.toLowerCase().includes("arbeitszeit") ? -0.25 : -1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-600 disabled:opacity-30"
-                        disabled={qty === 0}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center font-bold text-slate-700">{qty.toString().replace('.', ',')}</span>
-                      <button 
-                        onClick={() => handleUpdateQuantity(item.id, item.defaultPrice, item.name.toLowerCase().includes("arbeitszeit") ? 0.25 : 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-600"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                  </div>
+                  <div className="w-24">
+                      <input 
+                        type="number"
+                        min="0"
+                        step={item.name.toLowerCase().includes("arbeitszeit") || item.name.toLowerCase().includes("bde") ? "0.01" : "1"}
+                        className="w-full text-right border-gray-300 rounded-lg py-2 px-3 focus:ring-blue-500 outline-none text-sm bg-gray-50 border"
+                        value={qty || ""}
+                        placeholder="0"
+                        onChange={(e) => handleSetQuantity(item.id, item.defaultPrice, e.target.value)}
+                      />
+                    </div>
                 </div>
               );
             })}

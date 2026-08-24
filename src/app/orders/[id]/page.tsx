@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { Copy } from 'lucide-react';
 
 import { useEffect, useState } from "react";
-import { getOrderDetails, getSmsTemplates, addHistoryEntry, updateOrderStatus, cloneOrder, getAvailableServiceItems, updateOrderServices } from "./actions";
+import { getOrderDetails, getSmsTemplates, addHistoryEntry, updateOrderStatus, cloneOrder, getAvailableServiceItems, updateOrderServices, updateOrderDetailsText } from "./actions";
 import { Phone, MessageSquare, ArrowLeft, Clock, Send, CheckCircle2, AlertTriangle, CheckSquare, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { OrderStatus, CommunicationStatus } from "@/types";
@@ -193,12 +193,34 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </button>
           </div>
 
-          {order.technicianRemark && (
-            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-xl mb-6">
-              <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Bemerkung</h3>
-              <p className="text-slate-800 text-sm whitespace-pre-wrap">{order.technicianRemark}</p>
+          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-xl mb-6 flex justify-between items-start">
+            <div className="flex-1">
+              <div className="mb-4">
+                <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">WE-Lage / Wohnung</h3>
+                <p className="text-slate-800 text-sm">{order.apartmentLocation || <span className="text-gray-400 italic">Nicht angegeben</span>}</p>
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Bemerkung</h3>
+                <p className="text-slate-800 text-sm whitespace-pre-wrap">{order.technicianRemark || <span className="text-gray-400 italic">Keine Bemerkung</span>}</p>
+              </div>
             </div>
-          )}
+            
+            <button 
+              onClick={async () => {
+                const newLage = window.prompt("Neue WE-Lage / Wohnung:", order.apartmentLocation || "");
+                if (newLage !== null) {
+                  const newRemark = window.prompt("Neue Bemerkung:", order.technicianRemark || "");
+                  if (newRemark !== null) {
+                    await updateOrderDetailsText(order.id, newLage, newRemark);
+                    toast.success("Details gespeichert");
+                  }
+                }
+              }}
+              className="text-amber-700 hover:text-amber-900 text-sm font-medium flex items-center gap-1 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded transition-colors"
+            >
+              <Settings2 className="w-3 h-3" /> Bearbeiten
+            </button>
+          </div>
 
           <div className="bg-white border border-gray-200 p-4 rounded-xl mb-6">
             <div className="flex items-center justify-between mb-4">

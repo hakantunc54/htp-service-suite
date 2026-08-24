@@ -154,3 +154,22 @@ export async function cloneOrder(orderId: string) {
   revalidatePath(`/orders`);
   return { success: true, newOrderId: newOrder.id };
 }
+
+export async function updateOrderDetailsText(orderId: string, apartmentLocation: string, technicianRemark: string) {
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { apartmentLocation, technicianRemark }
+  });
+  
+  await prisma.historyEntry.create({
+    data: {
+      orderId,
+      type: "SYSTEM",
+      content: "Zusatzdetails (WE-Lage / Bemerkung) manuell in der Akte aktualisiert."
+    }
+  });
+
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath('/orders');
+  revalidatePath('/planning');
+}

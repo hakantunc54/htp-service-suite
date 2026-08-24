@@ -193,7 +193,10 @@ export default function TerminabsprachenPage() {
                             className="border p-2 rounded focus:ring-2 focus:ring-amber-500 outline-none bg-white"
                           >
                             <option value="none">Noch offen (Pool)</option>
-                            {vehicles.map(v => <option key={v} value={v}>{v}</option>)}
+                            {((orders.find(o => o.id === activeOrder)?.orderType || "").includes("BdE") 
+                              ? ['T1', 'T2', 'T3', 'T4'] 
+                              : ['Auto 1', 'Auto 2', 'Auto 3']
+                            ).map(v => <option key={v} value={v}>{v}</option>)}
                           </select>
                         </div>
                       </div>

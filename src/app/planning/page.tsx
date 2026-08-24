@@ -198,7 +198,7 @@ export default function PlanningPage() {
       return 0;
     });
 
-  const vehicles = [Vehicle.AUTO_1, Vehicle.AUTO_2, Vehicle.AUTO_3];
+  const vehicles = [Vehicle.AUTO_1, Vehicle.AUTO_2, Vehicle.AUTO_3, 'T1', 'T2', 'T3', 'T4'];
 
   return (
     <div className="p-8 max-w-7xl mx-auto h-full flex flex-col relative">
@@ -250,7 +250,7 @@ export default function PlanningPage() {
       <div className="flex-1 flex overflow-x-auto gap-6 min-h-0 pb-4">
         
         {/* Pool: Unzugewiesen */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
+        <div className="w-[320px] shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
           <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <h2 className="font-semibold text-lg flex items-center justify-between">
               Offener Pool
@@ -300,7 +300,7 @@ export default function PlanningPage() {
                   onChange={(e) => handleAssign(order.id, e.target.value)}
                 >
                   <option value="" disabled>Auto zuweisen...</option>
-                  {vehicles.map(v => (
+                  {vehicles.filter(v => (order.orderType || '').includes('BdE') ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
                     <option key={v} value={v}>{v}</option>
                   ))}
                 </select>
@@ -316,7 +316,7 @@ export default function PlanningPage() {
         {vehicles.map(vehicle => {
           const vehicleOrders = orders.filter(o => o.vehicle === vehicle);
           return (
-            <div key={vehicle} className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
+            <div key={vehicle} className="w-[320px] shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
               <div className="p-4 border-b border-gray-100 bg-blue-50/50 rounded-t-xl flex justify-between items-center">
                 <h2 className="font-semibold text-lg flex items-center gap-2 text-blue-900">
                   <CarFront className="w-5 h-5" />
@@ -366,7 +366,7 @@ export default function PlanningPage() {
                     >
                       <option value="" disabled>Auto zuweisen...</option>
                       <option value="none">-- Zurück in Pool --</option>
-                      {vehicles.map(v => (
+                      {vehicles.filter(v => (order.orderType || '').includes('BdE') ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
                         <option key={v} value={v}>{v}</option>
                       ))}
                     </select>

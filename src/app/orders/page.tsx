@@ -114,6 +114,7 @@ function OrdersContent() {
 
     return serviceItems
       .filter(item => item.category === category)
+      .filter(item => !item.name.toLowerCase().includes('anfahrt'))
       .sort((a, b) => {
         const indexA = sortOrder.indexOf(a.name);
         const indexB = sortOrder.indexOf(b.name);
@@ -286,12 +287,12 @@ function OrdersContent() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Bemerkung / Mehraufwand</label>
-                  <input 
-                    type="text" 
+                  <textarea 
                     value={technicianRemark}
                     onChange={e => setTechnicianRemark(e.target.value)}
                     placeholder="z.B. Kabelkanal 5m gezogen"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none text-sm resize-none"
                   />
                 </div>
               </div>

@@ -170,25 +170,29 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </button>
           </div>
 
-          
-          <h3 className="text-sm font-bold text-gray-800 mb-3">Status Updates (Quick Actions)</h3>
-          <div className="flex flex-col gap-2 mb-8">
-            <button onClick={() => handleQuickAction(OrderStatus.KUNDE_ERREICHT, CommunicationStatus.ERREICHT)} className="text-left px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg border">
-              📢 Kunde erreicht
-            </button>
-            <button onClick={() => handleQuickAction(OrderStatus.KUNDE_NICHT_ERREICHT, CommunicationStatus.NICHT_ERREICHT)} className="text-left px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg border">
-              📢 Kunde nicht erreicht
-            </button>
-            
-            <button 
-              onClick={handleCloneOrder} 
-              disabled={isCloning}
-              className="text-left px-4 py-2 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg border border-orange-200 mt-4 font-bold flex items-center gap-2 disabled:opacity-50 transition-colors"
-            >
-              <Copy className="w-4 h-4" /> BDE Abbrechen & Folgeauftrag (Klon) erstellen
-            </button>
-          </div>
-
+          {order.status !== "Erfolgreich abgeschlossen" && order.status !== "Storniert" && order.status !== "Abgerechnet" && (
+            <>
+              <h3 className="text-sm font-bold text-gray-800 mb-3">Status Updates (Quick Actions)</h3>
+              <div className="flex flex-col gap-2 mb-8">
+                <button onClick={() => handleQuickAction(OrderStatus.KUNDE_ERREICHT, CommunicationStatus.ERREICHT)} className="text-left px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg border">
+                  📞 Kunde erreicht
+                </button>
+                <button onClick={() => handleQuickAction(OrderStatus.KUNDE_NICHT_ERREICHT, CommunicationStatus.NICHT_ERREICHT)} className="text-left px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg border">
+                  📞 Kunde nicht erreicht
+                </button>
+                
+                {(order.orderType || "").includes("BdE") && (
+                  <button 
+                    onClick={handleCloneOrder} 
+                    disabled={isCloning}
+                    className="text-left px-4 py-2 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg border border-orange-200 mt-4 font-bold flex items-center gap-2 disabled:opacity-50 transition-colors"
+                  >
+                    <Copy className="w-4 h-4" /> BDE Abbrechen & Folgeauftrag (Klon) erstellen
+                  </button>
+                )}
+              </div>
+            </>
+          )}
 
         </div>
       </div>

@@ -24,11 +24,17 @@ interface EditServicesModalProps {
   onClose: () => void;
   currentServices: OrderService[];
   availableItems: ServiceItem[];
-  onSave: (newServices: any[]) => Promise<void>;
+  onSave: (newServices: any[], newRemark?: string) => Promise<void>;
   orderType: string;
+  currentRemark?: string;
 }
 
-export function EditServicesModal({ orderId, isOpen, onClose, currentServices, availableItems, onSave, orderType }: EditServicesModalProps) {
+export function EditServicesModal({ isOpen, onClose, orderId, orderType, availableItems, currentServices, onSave, currentRemark }: EditServicesModalProps) {
+  const [remark, setRemark] = useState(currentRemark || "");
+
+  useEffect(() => {
+    setRemark(currentRemark || "");
+  }, [currentRemark, isOpen]);
   const [editedServices, setEditedServices] = useState<OrderService[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -97,10 +103,10 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
     setIsSaving(true);
     try {
       await onSave(editedServices.map(s => ({
-        serviceItemId: s.serviceItemId,
-        quantity: s.quantity,
-        priceApplied: s.priceApplied || 0
-      })));
+          serviceItemId: s.serviceItemId,
+          quantity: s.quantity,
+          priceApplied: s.priceApplied || 0
+        })), remark);
       onClose();
     } catch (e) {
       toast.error("Fehler beim Speichern");
@@ -179,9 +185,20 @@ export function EditServicesModal({ orderId, isOpen, onClose, currentServices, a
               );
             })}
           </div>
-        </div>
+            
+            <div className="mt-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Bemerkung zur Abrechnung</label>
+              <textarea 
+                rows={3}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                placeholder="Optionale Bemerkung f�r diesen Auftrag (erscheint im Export)..."
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+              />
+            </div>
+          </div>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+          <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
           <div className="text-sm text-gray-500">
             Neuer Gesamtpreis: <br/>
             <strong className="text-lg text-slate-800">{calculateTotal().toFixed(2).replace('.', ',')} EUR</strong>

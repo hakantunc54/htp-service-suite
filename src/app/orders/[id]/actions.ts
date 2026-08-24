@@ -129,7 +129,7 @@ export async function cloneOrder(orderId: string) {
       orderType: originalOrder.orderType,
       htpRemark: originalOrder.htpRemark,
       apartmentLocation: originalOrder.apartmentLocation,
-      status: "Wartet auf HTP",
+      status: "Neu",
       communicationStatus: "NOCH_NICHT",
       technicianRemark: `Folgeauftrag aus vorherigem Abbruch am ${new Date().toLocaleDateString('de-DE')}`
     }

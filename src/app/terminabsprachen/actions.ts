@@ -9,13 +9,18 @@ const prisma = new PrismaClient();
 export async function getTerminabsprachen() {
   return await prisma.order.findMany({
     where: {
-      orderType: {
-        contains: "BdE"
-      },
+      OR: [
+        { orderType: { contains: "BdE" } },
+        { orderType: { contains: "BDE" } },
+        { orderType: { contains: "bde" } },
+        { orderType: { contains: "Endleitung" } },
+        { orderType: { contains: "endleitung" } }
+      ],
       status: {
         in: [
           "Termin abstimmen", 
           "Neu",
+          "Wartet auf HTP",
           "Kunde angerufen", 
           "Kunde erreicht", 
           "Kunde nicht erreicht", 

@@ -247,7 +247,7 @@ export default function PlanningPage() {
         </button>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 xl:grid-cols-4 gap-6 min-h-0">
+      <div className="flex-1 flex overflow-x-auto gap-6 min-h-0 pb-4">
         
         {/* Pool: Unzugewiesen */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">

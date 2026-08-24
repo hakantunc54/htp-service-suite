@@ -40,15 +40,18 @@ export async function saveImportedOrders(orders: ParsedOrder[]) {
         }
       });
       
-      if (orderData.isTerminabsprache) {
+              // Always create a system history entry logging the port and address at import time
+        const baseMsg = orderData.isTerminabsprache 
+          ? "Terminabsprachen-Auftrag importiert." 
+          : `Auftrag via Smart Import angelegt. Servicefenster: ${orderData.htpPlanfenster || "Keines"}`;
+        
         await prisma.historyEntry.create({
           data: {
             orderId: newOrder.id,
             type: "SYSTEM",
-            content: "Terminabsprachen-Auftrag importiert"
+            content: `${baseMsg}\nAnschlussadresse: ${orderData.address || "Unbekannt"}\nPort/Netzelement: ${orderData.port || "Fehlt"}`
           }
         });
-      }
     }
     return { success: true, count: orders.length };
   } catch (error) {

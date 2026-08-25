@@ -33,7 +33,7 @@ function OrdersContent() {
   
   const renderSortIndicator = (col: string) => {
     if (sortColumn !== col) return null;
-    return <span className="ml-1 text-blue-600">{sortDirection === "asc" ? "↑" : "↓"}</span>;
+    return <span className="ml-1 text-blue-600">{sortDirection === "asc" ? "\u2191" : "\u2193"}</span>;
   };
 
   useEffect(() => {
@@ -431,12 +431,24 @@ function OrdersContent() {
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-100 text-gray-600 font-semibold sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-6 py-4">Kunde</th>
-                  <th className="px-6 py-4">Adresse</th>
-                  <th className="px-6 py-4">Auftragstyp</th>
-                  <th className="px-6 py-4">Datum</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Abrechnung</th>
+                  <th onClick={() => handleSort("Kunde")} className="px-6 py-4 cursor-pointer hover:bg-gray-200 transition-colors">
+                    Kunde {renderSortIndicator("Kunde")}
+                  </th>
+                  <th onClick={() => handleSort("Adresse")} className="px-6 py-4 cursor-pointer hover:bg-gray-200 transition-colors">
+                    Adresse {renderSortIndicator("Adresse")}
+                  </th>
+                  <th onClick={() => handleSort("Auftragstyp")} className="px-6 py-4 cursor-pointer hover:bg-gray-200 transition-colors">
+                    Auftragstyp {renderSortIndicator("Auftragstyp")}
+                  </th>
+                  <th onClick={() => handleSort("Datum")} className="px-6 py-4 cursor-pointer hover:bg-gray-200 transition-colors">
+                    Datum {renderSortIndicator("Datum")}
+                  </th>
+                  <th onClick={() => handleSort("Status")} className="px-6 py-4 cursor-pointer hover:bg-gray-200 transition-colors">
+                    Status {renderSortIndicator("Status")}
+                  </th>
+                  <th onClick={() => handleSort("Abrechnung")} className="px-6 py-4 cursor-pointer hover:bg-gray-200 transition-colors">
+                    Abrechnung {renderSortIndicator("Abrechnung")}
+                  </th>
                   <th className="px-6 py-4 text-right">Aktionen</th>
                 </tr>
               </thead>

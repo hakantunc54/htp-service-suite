@@ -19,6 +19,22 @@ function OrdersContent() {
   // Filters
   const [search, setSearch] = useState(searchParams?.get("q") || "");
   const [dateFilter, setDateFilter] = useState("");
+  const [sortColumn, setSortColumn] = useState<string>("Datum");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(col);
+      setSortDirection("asc");
+    }
+  };
+  
+  const renderSortIndicator = (col: string) => {
+    if (sortColumn !== col) return null;
+    return <span className="ml-1 text-blue-600">{sortDirection === "asc" ? "↑" : "↓"}</span>;
+  };
 
   useEffect(() => {
     if (searchParams?.get("q")) setSearch(searchParams.get("q") || "");
@@ -60,7 +76,6 @@ function OrdersContent() {
       (o.customer.mobile?.toLowerCase() || "").includes(term);
     
     // 2. Date Filter
-    // We check if the kundenTerminStart matches the selected date
     let matchesDate = true;
     if (dateFilter) {
       if (!o.kundenTerminStart) {
@@ -72,6 +87,33 @@ function OrdersContent() {
     }
 
     return matchesSearch && matchesDate;
+  }).sort((a, b) => {
+    let valA: any = "";
+    let valB: any = "";
+    
+    if (sortColumn === "Kunde") {
+      valA = a.customer.customerName;
+      valB = b.customer.customerName;
+    } else if (sortColumn === "Adresse") {
+      valA = a.customer.address;
+      valB = b.customer.address;
+    } else if (sortColumn === "Auftragstyp") {
+      valA = a.orderType || "";
+      valB = b.orderType || "";
+    } else if (sortColumn === "Status") {
+      valA = a.status || "";
+      valB = b.status || "";
+    } else if (sortColumn === "Abrechnung") {
+      valA = a.status === "Abgerechnet" ? "1" : "0";
+      valB = b.status === "Abgerechnet" ? "1" : "0";
+    } else if (sortColumn === "Datum") {
+      valA = a.kundenTerminStart ? new Date(a.kundenTerminStart).getTime() : 0;
+      valB = b.kundenTerminStart ? new Date(b.kundenTerminStart).getTime() : 0;
+    }
+    
+    if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+    if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+    return 0;
   });
 
   const openBilling = (order: OrderData) => {

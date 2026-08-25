@@ -6,7 +6,7 @@ import { ParsedOrder } from '@/lib/parser';
 
 const prisma = new PrismaClient();
 
-export async function saveImportedOrders(orders: ParsedOrder[]) {
+export async function saveImportedOrders(orders: ParsedOrder[], targetDateStr?: string) {
   try {
     for (const orderData of orders) {
       // Create or find customer
@@ -26,15 +26,29 @@ export async function saveImportedOrders(orders: ParsedOrder[]) {
       }
 
       // Create order
-      const newOrder = await prisma.order.create({
-        data: {
-          customerId: customer.id,
-          htpPlanfenster: orderData.htpPlanfenster,
-          orderType: orderData.orderType,
-          status: orderData.isTerminabsprache ? OrderStatus.TERMIN_ABSTIMMEN : OrderStatus.NEU,
-          communicationStatus: orderData.isTerminabsprache ? CommunicationStatus.NOCH_NICHT_KONTAKTIERT : CommunicationStatus.NOCH_NICHT,
-          
-          vosNumber: orderData.vosNumber,
+      // Compute the initial termin based on targetDate
+        let termin = null;
+        if (targetDateStr) {
+          const baseDate = new Date(targetDateStr);
+          // Try to extract hour from htpPlanfenster (e.g. "08:00 - 17:00")
+          if (orderData.htpPlanfenster) {
+            const timeMatch = orderData.htpPlanfenster.match(/(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+              baseDate.setHours(parseInt(timeMatch[1], 10), parseInt(timeMatch[2], 10), 0, 0);
+            }
+          }
+          termin = baseDate;
+        }
+
+        const newOrder = await prisma.order.create({
+          data: {
+            customerId: customer.id,
+            htpPlanfenster: orderData.htpPlanfenster,
+            orderType: orderData.orderType,
+            status: targetDateStr ? OrderStatus.TERMIN_VEREINBART : (orderData.isTerminabsprache ? OrderStatus.TERMIN_ABSTIMMEN : OrderStatus.NEU),
+            communicationStatus: targetDateStr ? CommunicationStatus.TERMIN_BESTAETIGT : (orderData.isTerminabsprache ? CommunicationStatus.NOCH_NICHT_KONTAKTIERT : CommunicationStatus.NOCH_NICHT),
+            kundenTerminStart: termin,
+            vosNumber: orderData.vosNumber,
           broadbandTechnology: orderData.broadbandTechnology,
           port: orderData.port,
         }

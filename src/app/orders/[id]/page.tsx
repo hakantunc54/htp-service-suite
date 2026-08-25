@@ -54,39 +54,27 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const [selectedTemplateName, setSelectedTemplateName] = useState("");
+
   const handleSmsAction = async (templateName: string) => {
     if (!order) return;
     const template = templates.find(t => t.name === templateName);
     if (!template) return;
-
     let content = template.content.replace("{name}", order.customer.customerName);
     
-    // Fallback if HTTPS is not available
-    if (!navigator.clipboard && !window.isSecureContext) {
-      setManualSmsText(content);
-      setShowManualSmsModal(true);
-      await addHistoryEntry(order.id, "SMS", `SMS '${templateName}' generiert (Manuelles Kopieren).`);
-      await updateOrderStatus(order.id, order.status, CommunicationStatus.SMS_GESENDET);
-      fetchData();
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(content);
-      toast.success("SMS kopiert! Google Messages �ffnet sich...", { duration: 4000 });
-      window.open("https://messages.google.com/web/", "_blank");
-      await addHistoryEntry(order.id, "SMS", `SMS '${templateName}' generiert und kopiert.`);
-      await updateOrderStatus(order.id, order.status, CommunicationStatus.SMS_GESENDET);
-      fetchData();
-    } catch (err) {
-      console.error("Failed to copy", err);
-      // Even if navigator.clipboard is defined, it might fail if permission is denied.
-      setManualSmsText(content);
-      setShowManualSmsModal(true);
-      await addHistoryEntry(order.id, "SMS", `SMS '${templateName}' generiert (Manuelles Kopieren).`);
-      await updateOrderStatus(order.id, order.status, CommunicationStatus.SMS_GESENDET);
-      fetchData();
-    }
+    setManualSmsText(content);
+    setSelectedTemplateName(templateName);
+    
+    // Log history and status only when a template is explicitly chosen
+    await addHistoryEntry(order.id, "SMS", `SMS '${templateName}' generiert.`);
+    await updateOrderStatus(order.id, order.status, CommunicationStatus.SMS_GESENDET);
+    fetchData();
+  };
+  
+  const openSmsModal = () => {
+    setManualSmsText("");
+    setSelectedTemplateName("");
+    setShowManualSmsModal(true);
   };
 
   const handleCall = async () => {
@@ -273,7 +261,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </button>
 
             <button 
-              onClick={() => handleSmsAction("Erstkontakt")}
+              onClick={openSmsModal}
               className="flex flex-col items-center justify-center p-4 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl transition-colors border border-blue-200"
             >
               <MessageSquare className="w-6 h-6 mb-2" />

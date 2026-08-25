@@ -388,16 +388,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                Manuelles Kopieren n�tig
+                Manuelles Kopieren nötig
               </h2>
               <button onClick={() => setShowManualSmsModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                Schlie�en
+                Schließen
               </button>
             </div>
             <div className="p-6 overflow-y-auto">
               <p className="text-sm text-gray-600 mb-4">
-                Da du �ber eine lokale IP-Adresse zugreifst, blockiert der Browser das automatische Kopieren. 
-                Bitte markiere den Text unten (oder dr�cke <strong>Strg + A</strong> und <strong>Strg + C</strong>) und �ffne dann Google Messages.
+                Da du über eine lokale IP-Adresse zugreifst, blockiert der Browser das automatische Kopieren. 
+                Bitte markiere den Text unten (oder drücke <strong>Strg + A</strong> und <strong>Strg + C</strong>) und öffne dann Google Messages.
               </p>
               <textarea 
                 className="w-full h-48 p-4 border border-blue-200 bg-blue-50/30 rounded-xl outline-none font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500"
@@ -421,7 +421,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 onClick={() => setShowManualSmsModal(false)}
                 className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-200"
               >
-                Google Messages �ffnen
+                Google Messages öffnen
               </a>
             </div>
           </div>

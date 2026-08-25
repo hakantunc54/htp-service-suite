@@ -111,7 +111,7 @@ export async function logCall(orderId: string) {
     data: {
       orderId,
       type: "CALL",
-      content: "Kunde telefonisch erreicht"
+      content: "?? Ausgehender Anruf (Ergebnis offen)"
     }
   });
   revalidatePath('/terminabsprachen');

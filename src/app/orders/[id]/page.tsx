@@ -88,7 +88,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const phone = order.customer.mobile || order.customer.phone;
     window.location.href = `tel:${phone}`;
     
-    await addHistoryEntry(order.id, "CALL", "Kunde angerufen.");
+    await addHistoryEntry(order.id, "CALL", "?? Ausgehender Anruf (Ergebnis offen)");
     toast.success("Anruf dokumentiert");
     fetchData();
   };

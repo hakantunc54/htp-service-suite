@@ -18,34 +18,9 @@ export default async function Home() {
   });
 
   
-  // Hole alle potenziellen R�ckrufe und filtere FTTB hart in JavaScript heraus
-  const rawCallbacks = await prisma.order.findMany({
-    where: {
-      OR: [
-        { status: "Neu" },
-        { status: "Kunde nicht erreicht" },
-        { status: "Kunde hat zur�ckgerufen" },
-        { status: "Kunde hat zurOckgerufen" }
-      ],
-      communicationStatus: { notIn: ["Termin best�tigt", "Termin besttigt"] }
-    },
-    select: { orderType: true, vosNumber: true, status: true, kundenTerminStart: true }
-  });
-
-  const callbacksToday = rawCallbacks.filter(o => {
-    // Wenn es ein echter eingestellter FTTB (ohne vosNumber und ohne "BDE" im Namen) ist, komplett ignorieren!
-    const isBDE = (o.orderType || "").toLowerCase().includes("bde") || 
-                  (o.orderType || "").toLowerCase().includes("endleitung") || 
-                  o.vosNumber;
-                  
-    // FTTB ignorieren, wir z�hlen nur BDEs!
-    if (!isBDE) return false;
-    
-    // Bei BDEs: Z�hlen, wenn Termin fehlt ODER Kunde explizit auf R�ckruf steht
-    if (o.status === "Neu" && o.kundenTerminStart !== null) return false; 
-    
-    return true;
-  }).length;
+  // Hole exakt dieselbe Liste an offenen BDE-R�ckrufen, die auch der Terminabsprachen-Reiter anzeigt
+  const terminabsprachen = await getTerminabsprachen();
+  const callbacksToday = terminabsprachen.length;
 
   const appointmentsToday = await prisma.order.count({
     where: { kundenTerminStart: { gte: startOfToday, lte: endOfToday } }

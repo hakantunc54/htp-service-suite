@@ -43,7 +43,7 @@ function OrdersContent() {
   // Billing Modal State
   const [billingOrder, setBillingOrder] = useState<OrderData | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [optionalValue, setOptionalValue] = useState<number>(0);
+  const [variableValues, setVariableValues] = useState<Record<string, number>>({});
   const [apartmentLocation, setApartmentLocation] = useState("");
   const [technicianRemark, setTechnicianRemark] = useState("");
   const [bdeStatus, setBdeStatus] = useState("BDE erledigt - neuer BT erforderlich");
@@ -119,7 +119,7 @@ function OrdersContent() {
   const openBilling = (order: OrderData) => {
     setBillingOrder(order);
     setQuantities({});
-    setOptionalValue(0);
+    setVariableValues({});
     setApartmentLocation(order.apartmentLocation || "");
     setTechnicianRemark(order.technicianRemark || "");
       setBdeStatus(order.bdeStatus || "BDE erledigt - neuer BT erforderlich");
@@ -191,8 +191,8 @@ function OrdersContent() {
       
       const q = quantities[item.id] || 0;
       if (item.name.toLowerCase().includes("optional") || item.name.toLowerCase().includes("material")) {
-        total += optionalValue;
-      } else {
+          total += (variableValues[item.id] || 0);
+        } else {
         total += (item.defaultPrice || 0) * q;
       }
     });
@@ -209,9 +209,9 @@ function OrdersContent() {
       const q = quantities[item.id] || 0;
       const isVariable = item.name.toLowerCase().includes("optional") || item.name.toLowerCase().includes("material");
       
-      if (isVariable && optionalValue > 0) {
-        itemsToSave.push({ serviceItemId: item.id, quantity: 1, amount: optionalValue });
-      } else if (q > 0) {
+      if (isVariable && (variableValues[item.id] || 0) > 0) {
+          itemsToSave.push({ serviceItemId: item.id, quantity: 1, amount: variableValues[item.id] });
+        } else if (q > 0) {
         itemsToSave.push({ serviceItemId: item.id, quantity: q, amount: (item.defaultPrice || 0) * q });
       }
     }
@@ -263,7 +263,7 @@ function OrdersContent() {
                   
                   const disabled = isItemDisabled(item.name);
                   const q = disabled ? 0 : (quantities[item.id] || 0);
-                  const rowTotal = isVariable ? optionalValue : (item.defaultPrice || 0) * q;
+                  const rowTotal = isVariable ? (variableValues[item.id] || 0) : (item.defaultPrice || 0) * q;
                   
                   return (
                     <div key={item.id} className={`grid grid-cols-[1fr_auto_100px_100px] gap-4 items-center bg-white p-3 rounded-lg border ${disabled ? 'border-gray-100 opacity-50 grayscale' : 'border-gray-200 shadow-sm hover:border-blue-300'} transition-all`}>
@@ -305,9 +305,9 @@ function OrdersContent() {
                             step="0.01"
                             disabled={disabled}
                             className="w-full text-right border-gray-300 rounded bg-blue-50 py-1 px-2 focus:ring-blue-500 outline-none text-sm font-medium"
-                            value={optionalValue || ""}
+                            value={variableValues[item.id] || ""}
                             placeholder="0,00"
-                            onChange={e => setOptionalValue(parseFloat(e.target.value) || 0)}
+                            onChange={e => setVariableValues({...variableValues, [item.id]: parseFloat(e.target.value) || 0})}
                           />
                         ) : (
                           `${rowTotal.toFixed(2)} €`

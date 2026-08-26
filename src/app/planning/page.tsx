@@ -53,7 +53,7 @@ export default function PlanningPage() {
     // 1. Welche Aufträge sollen exportiert werden? (Spezielles Auto oder Alle Autos)
     let ordersToExport = vehicleName 
       ? orders.filter(o => o.vehicle === vehicleName)
-      : orders.filter(o => [Vehicle.AUTO_1, Vehicle.AUTO_2, Vehicle.AUTO_3].includes(o.vehicle as any));
+      : orders.filter(o => o.vehicle !== null && o.vehicle !== ""); // Includes all assigned vehicles (Auto 1-3 AND T1-T4)
     
     // 2. Nur Aufträge von heute exportieren (oder Aufträge ganz ohne Fixtermin)
     const todayStr = new Date().toISOString().split('T')[0];

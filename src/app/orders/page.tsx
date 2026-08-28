@@ -342,6 +342,22 @@ function OrdersContent() {
             <div className="p-6 border-t border-gray-200 bg-white sticky bottom-0">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Fahrzeug / Techniker</label>
+                  <select 
+                    value={vehicle}
+                    onChange={e => setVehicle(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none text-sm bg-white mb-4"
+                  >
+                    <option value="">Nicht zugewiesen</option>
+                    <option value="Auto 1">Auto 1</option>
+                    <option value="Auto 2">Auto 2</option>
+                    <option value="Auto 3">Auto 3</option>
+                    <option value="T 1">T 1 (BDE)</option>
+                    <option value="T 2">T 2 (BDE)</option>
+                    <option value="T 3">T 3 (BDE)</option>
+                    <option value="T 4">T 4 (BDE)</option>
+                  </select>
+                  
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">WE-Lage</label>
                   <input 
                     type="text" 

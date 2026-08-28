@@ -142,7 +142,7 @@ export async function GET(request: Request) {
           "Kunde Name": order.customer.customerName,
           "Kunden\nNummer": order.customer.customerNumber,
           "Kunde RufNr": order.customer.phone || order.customer.mobile,
-          "Status": (Number(getQty("Abbruch")) > 0 || Number(getQty("KvHdF")) > 0) ? "Abgebrochen" : "Erledigt",
+          "Status": (Number(getQty("Abbruch")) > 0 || Number(getQty("KvHdF")) > 0) ? "Abbruch" : "Erledigt",
           "Bemerkung": order.technicianRemark || "",
           "WE\nLage": order.apartmentLocation || "",
           "FTTB": getQty("FTTB"),
@@ -156,6 +156,7 @@ export async function GET(request: Request) {
           "Warten 10Min": getQty("Warten 10Min"),
           "fZugang DPU/APL": getQty("fZugang DPU/APL"),
           "KvHdF": getQty("KvHdF"),
+            "DPU Aufbau": getQty("DPU Aufbau"),
           "Dispo": getQty("Dispo"),
           "optional": getAmount("Optional / Material (FTTB)")
         };

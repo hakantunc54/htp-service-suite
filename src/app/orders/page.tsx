@@ -47,6 +47,7 @@ function OrdersContent() {
   const [apartmentLocation, setApartmentLocation] = useState("");
   const [technicianRemark, setTechnicianRemark] = useState("");
   const [bdeStatus, setBdeStatus] = useState("BDE erledigt - neuer BT erforderlich");
+  const [vehicle, setVehicle] = useState("");
   const [materialDetails, setMaterialDetails] = useState("Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
 
   useEffect(() => {
@@ -122,6 +123,7 @@ function OrdersContent() {
     setVariableValues({});
     setApartmentLocation(order.apartmentLocation || "");
     setTechnicianRemark(order.technicianRemark || "");
+    setVehicle(order.vehicle || "");
       setBdeStatus(order.bdeStatus || "BDE erledigt - neuer BT erforderlich");
       setMaterialDetails(order.materialDetails || "Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
   };
@@ -146,7 +148,8 @@ function OrdersContent() {
       "fZugang DPU/APL",
       "KvHdF",
       "Dispo",
-      "Optional / Material (FTTB)"
+      "DPU Aufbau",
+        "Optional / Material (FTTB)"
     ];
 
     // For BDE, just some logical order
@@ -219,7 +222,7 @@ function OrdersContent() {
     const totalAmount = calculateTotal();
     
     try {
-      await saveBilling(billingOrder.id, itemsToSave, totalAmount, apartmentLocation, technicianRemark, isBDE ? bdeStatus : undefined, isBDE ? materialDetails : undefined);
+      await saveBilling(billingOrder.id, itemsToSave, totalAmount, apartmentLocation, technicianRemark, isBDE ? bdeStatus : undefined, isBDE ? materialDetails : undefined, vehicle);
       toast.success("Auftrag erfolgreich abgerechnet!");
       setBillingOrder(null);
       fetchData();

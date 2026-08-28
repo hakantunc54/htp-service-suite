@@ -29,7 +29,8 @@ export async function saveBilling(
   apartmentLocation: string = "",
   technicianRemark: string = "",
   bdeStatus?: string,
-  materialDetails?: string
+  materialDetails?: string,
+  vehicle?: string
 ) {
   // Loesche alte Positionen falls vorhanden
   await prisma.orderServiceItem.deleteMany({

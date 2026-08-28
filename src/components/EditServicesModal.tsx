@@ -155,7 +155,7 @@ Materialaufwand:
               const category = isBDE ? "BDE" : "FTTB";
               
               const bdeOrder = ["Arbeitszeit (Std.)", "Material (BDE)", "Optional (BDE)"];
-              const fttbOrder = ["FTTB", "Abbruch", "MAW (5Min)", "PCI", "vLauiAPLe", "Warten 5Min", "Warten 10Min", "fZugang DPU/APL", "KvHdF", "Dispo", "Optional / Material (FTTB)"];
+              const fttbOrder = ["FTTB", "Abbruch", "MAW (5Min)", "PCI", "vLauiAPLe", "Warten 5Min", "Warten 10Min", "fZugang DPU/APL", "KvHdF", "Dispo", "DPU Aufbau", "Optional / Material (FTTB)"];
               const sortOrder = isBDE ? bdeOrder : fttbOrder;
               
               return availableItems

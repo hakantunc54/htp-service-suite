@@ -58,8 +58,11 @@ export async function saveBilling(
       orderValue: totalAmount,
       status: "Erfolgreich abgeschlossen", // Set status to completed automatically when billed
       apartmentLocation,
-      technicianRemark
-    }
+        technicianRemark,
+          ...(vehicle !== undefined && { vehicle }),
+          ...(bdeStatus !== undefined && { bdeStatus }),
+          ...(materialDetails !== undefined && { materialDetails })
+        }
   });
 
   // Log to history

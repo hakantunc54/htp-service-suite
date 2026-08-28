@@ -8,7 +8,8 @@ const prisma = new PrismaClient();
 export async function getOrders() {
   return await prisma.order.findMany({
     include: {
-      customer: true
+      customer: true,
+      services: true
     },
     orderBy: {
       createdAt: 'desc'

@@ -117,15 +117,31 @@ function OrdersContent() {
     return 0;
   });
 
-  const openBilling = (order: OrderData) => {
+      const openBilling = (order: OrderData) => {
     setBillingOrder(order);
-    setQuantities({});
-    setVariableValues({});
+    
+    const newQuantities: Record<string, number> = {};
+    const newVariables: Record<string, number> = {};
+    
+    if (order.services && order.services.length > 0) {
+      order.services.forEach(s => {
+        const si = serviceItems.find(item => item.id === s.serviceItemId);
+        if (si && (si.name.toLowerCase().includes("optional") || si.name.toLowerCase().includes("material"))) {
+          newVariables[s.serviceItemId] = Number(s.priceApplied || 0);
+        } else {
+          newQuantities[s.serviceItemId] = Number(s.quantity);
+        }
+      });
+    }
+    
+    setQuantities(newQuantities);
+    setVariableValues(newVariables);
+    
     setApartmentLocation(order.apartmentLocation || "");
     setTechnicianRemark(order.technicianRemark || "");
     setVehicle(order.vehicle || "");
-      setBdeStatus(order.bdeStatus || "BDE erledigt - neuer BT erforderlich");
-      setMaterialDetails(order.materialDetails || "Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
+    setBdeStatus(order.bdeStatus || "BDE erledigt - neuer BT erforderlich");
+    setMaterialDetails(order.materialDetails || "Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
   };
 
   const isBDE = billingOrder ? ((billingOrder.orderType || "").toLowerCase().includes("bde") || (billingOrder.orderType || "").toLowerCase().includes("endleitung") || billingOrder.vosNumber) : false;
@@ -483,7 +499,7 @@ function OrdersContent() {
                     </td>
                     <td className="px-6 py-4">
                       {order.isBilled ? (
-                        <span className="text-green-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> BERECHNET</span>
+                        <button onClick={() => openBilling(order)} className="text-green-600 font-bold flex items-center gap-1 hover:text-green-700 hover:bg-green-50 p-1.5 rounded transition-colors cursor-pointer" title="Abrechnung bearbeiten"><CheckCircle2 className="w-4 h-4" /> BERECHNET</button>
                       ) : (
                         <button
                           onClick={() => openBilling(order)}

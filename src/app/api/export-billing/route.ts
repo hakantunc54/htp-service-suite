@@ -156,7 +156,6 @@ export async function GET(request: Request) {
           "Warten 10Min": getQty("Warten 10Min"),
           "fZugang DPU/APL": getQty("fZugang DPU/APL"),
           "KvHdF": getQty("KvHdF"),
-            "DPU Aufbau": getQty("DPU Aufbau"),
           "Dispo": getQty("Dispo"),
           "optional": getAmount("Optional / Material (FTTB)")
         };

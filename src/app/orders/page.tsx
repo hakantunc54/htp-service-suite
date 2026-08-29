@@ -19,6 +19,7 @@ function OrdersContent() {
   // Filters
   const [search, setSearch] = useState(searchParams?.get("q") || "");
   const [dateFilter, setDateFilter] = useState("");
+  const [weekFilter, setWeekFilter] = useState("");
   const [sortColumn, setSortColumn] = useState<string>("Datum");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   
@@ -77,15 +78,35 @@ function OrdersContent() {
       (o.customer.mobile?.toLowerCase() || "").includes(term);
     
     // 2. Date Filter
-    let matchesDate = true;
-    if (dateFilter) {
-      if (!o.kundenTerminStart) {
-        matchesDate = false;
-      } else {
-        const orderDateStr = new Date(o.kundenTerminStart).toISOString().split('T')[0];
-        matchesDate = orderDateStr === dateFilter;
+      let matchesDate = true;
+      if (dateFilter) {
+        if (!o.kundenTerminStart) {
+          matchesDate = false;
+        } else {
+          const orderDateStr = new Date(o.kundenTerminStart).toISOString().split('T')[0];
+          matchesDate = orderDateStr === dateFilter;
+        }
+      } else if (weekFilter) {
+        if (!o.kundenTerminStart) {
+          matchesDate = false;
+        } else {
+          const d = new Date(o.kundenTerminStart);
+          const dt = new Date(d.valueOf());
+          dt.setDate(dt.getDate() - ((d.getDay() + 6) % 7) + 3);
+          const firstThursday = dt.valueOf();
+          dt.setMonth(0, 1);
+          if (dt.getDay() !== 4) {
+            dt.setMonth(0, 1 + ((4 - dt.getDay()) + 7) % 7);
+          }
+          const week = 1 + Math.ceil((firstThursday - dt.valueOf()) / 604800000);
+          
+          const dtYear = new Date(d.valueOf());
+          dtYear.setDate(dtYear.getDate() - ((d.getDay() + 6) % 7) + 3);
+          const orderWeekStr = `${dtYear.getFullYear()}-W${week.toString().padStart(2, '0')}`;
+          
+          matchesDate = orderWeekStr === weekFilter;
+        }
       }
-    }
 
     return matchesSearch && matchesDate;
   }).sort((a, b) => {
@@ -441,23 +462,31 @@ function OrdersContent() {
           </div>
           
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Datum:</span>
-            <input 
-              type="date"
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-auto"
-              value={dateFilter}
-              onChange={e => setDateFilter(e.target.value)}
-            />
-            {dateFilter && (
-              <button 
-                onClick={() => setDateFilter("")}
-                className="text-xs text-red-500 hover:underline whitespace-nowrap"
-              >
-                Filter löschen
-              </button>
-            )}
-          </div>
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap hidden sm:inline">Filter:</span>
+              <input 
+                type="date"
+                title="Tagesfilter"
+                className="border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-auto"
+                value={dateFilter}
+                onChange={e => { setDateFilter(e.target.value); setWeekFilter(""); }}
+              />
+              <input 
+                type="week"
+                title="Wochenfilter"
+                className="border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-auto"
+                value={weekFilter}
+                onChange={e => { setWeekFilter(e.target.value); setDateFilter(""); }}
+              />
+              {(dateFilter || weekFilter) && (
+                <button 
+                  onClick={() => { setDateFilter(""); setWeekFilter(""); }}
+                  className="text-xs text-red-500 hover:underline whitespace-nowrap"
+                >
+                  Filter löschen
+                </button>
+              )}
+            </div>
         </div>
 
         <div className="overflow-auto flex-1">

@@ -44,7 +44,17 @@ export default async function Home() {
   // All completed orders for the chart
   const allBilledOrders = await prisma.order.findMany({
     where: { status: "Erfolgreich abgeschlossen" },
-    select: { orderValue: true, orderType: true, kundenTerminStart: true, updatedAt: true, vosNumber: true, vehicle: true }
+    select: { 
+      orderValue: true, 
+      orderType: true, 
+      kundenTerminStart: true, 
+      updatedAt: true, 
+      vosNumber: true, 
+      vehicle: true,
+      services: {
+        include: { serviceItem: true }
+      }
+    }
   });
 
   const monthNames = ["Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
@@ -71,7 +81,20 @@ export default async function Home() {
       chartDataMap[dateStr] = { dateStr, year, month, day, dateObj: date, FTTB: 0, BDE: 0 };
     }
     
-    const val = o.orderValue || 0;
+    // Calculate the real order value by summing up services, EXCLUDING any accidentally billed Anfahrt items
+    // Since Anfahrt is calculated dynamically below per vehicle per day, we must not double-count it here.
+    let val = 0;
+    if (o.services && o.services.length > 0) {
+      o.services.forEach((s: any) => {
+        if (!s.serviceItem.name.toLowerCase().includes('anfahrt')) {
+          val += s.priceApplied || 0;
+        }
+      });
+    } else {
+      // Fallback if no services are attached (shouldn't happen for billed orders, but just in case)
+      val = o.orderValue || 0;
+    }
+    
     const isBDE = (o.orderType || "").toLowerCase().includes("bde") || (o.orderType || "").toLowerCase().includes("endleitung") || o.vosNumber;
     const type = isBDE ? "BDE" : "FTTB";
     

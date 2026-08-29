@@ -78,3 +78,17 @@ export async function saveBilling(
   revalidatePath('/billing');
   return { success: true };
 }
+
+export async function deleteOrder(orderId: string) {
+  try {
+    await prisma.order.delete({
+      where: { id: orderId }
+    });
+    revalidatePath("/orders");
+    revalidatePath("/billing");
+    return { success: true };
+  } catch (error) {
+    console.error("Fehler beim L�schen des Auftrags:", error);
+    return { success: false, error: "Auftrag konnte nicht gel�scht werden" };
+  }
+}

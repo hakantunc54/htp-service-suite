@@ -3,7 +3,8 @@ import { generatePdf } from '@/lib/pdfGenerator';
 
 import { useEffect, useState } from "react";
 import { getBillingData } from "./actions";
-import { Calculator, Download, Calendar } from "lucide-react";
+import { Calculator, Download, Calendar, Trash2 } from "lucide-react";
+import { deleteOrder } from "../orders/actions";
 import { toast } from "sonner";
 
 type BillingOrder = Awaited<ReturnType<typeof getBillingData>>[0];
@@ -65,6 +66,26 @@ export default function BillingPage() {
       toast.error("Fehler beim PDF Export");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  
+  const handleDeleteOrder = async (orderId: string, customerName: string) => {
+    if (!confirm(`M�chten Sie den abgerechneten Auftrag von ${customerName} wirklich unwiderruflich l�schen?`)) return;
+    
+    setLoading(true);
+    try {
+      const result = await deleteOrder(orderId);
+      if (result.success) {
+        toast.success("Auftrag erfolgreich gel�scht.");
+        await fetchData();
+      } else {
+        toast.error(result.error || "Fehler beim L�schen.");
+      }
+    } catch (e) {
+      toast.error("Fehler beim L�schen.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,6 +164,7 @@ export default function BillingPage() {
               <th className="px-6 py-4">Typ</th>
               <th className="px-6 py-4">Datum</th>
               <th className="px-6 py-4">Summe</th>
+                <th className="px-6 py-4 text-right">Aktionen</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

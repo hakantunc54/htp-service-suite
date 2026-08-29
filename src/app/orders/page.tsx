@@ -42,6 +42,7 @@ function OrdersContent() {
 
   // Billing Modal State
   const [billingOrder, setBillingOrder] = useState<OrderData | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<{id: string, name: string} | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [variableValues, setVariableValues] = useState<Record<string, number>>({});
   const [apartmentLocation, setApartmentLocation] = useState("");
@@ -55,11 +56,14 @@ function OrdersContent() {
   }, []);
 
   
-  const handleDeleteOrder = async (orderId: string, customerName: string) => {
-    if (!confirm(`M�chten Sie den Auftrag von ${customerName} wirklich unwiderruflich l�schen?`)) return;
-    
+  const handleDeleteOrder = (orderId: string, customerName: string) => {
+    setOrderToDelete({ id: orderId, name: customerName });
+  };
+
+  const confirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
     setLoading(true);
-    const result = await deleteOrder(orderId);
+    const result = await deleteOrder(orderToDelete.id);
     if (result.success) {
       toast.success("Auftrag erfolgreich gel�scht.");
       fetchData();
@@ -67,6 +71,7 @@ function OrdersContent() {
       toast.error(result.error || "Fehler beim L�schen.");
       setLoading(false);
     }
+    setOrderToDelete(null);
   };
 
   const fetchData = async () => {

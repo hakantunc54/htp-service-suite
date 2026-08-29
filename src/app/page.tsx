@@ -53,8 +53,8 @@ export default async function Home() {
   
   // Track Anfahrten grouped by Date+Vehicle+Type
   const anfahrtGroups: {
-    FTTB: Record<string, { year: number; month: number; count: number }>;
-    BDE: Record<string, { year: number; month: number; count: number }>;
+    FTTB: Record<string, { dateStr: string; count: number }>;
+      BDE: Record<string, { dateStr: string; count: number }>;
   } = {
     FTTB: {},
     BDE: {}
@@ -64,64 +64,55 @@ export default async function Home() {
     const date = o.kundenTerminStart || o.updatedAt;
     const year = date.getFullYear();
     const month = date.getMonth();
-    const key = `${year}-${month}`;
+    const day = date.getDate();
+    const dateStr = date.toISOString().split('T')[0];
     
-    if (!chartDataMap[key]) {
-      chartDataMap[key] = { year, month, monthName: monthNames[month], FTTB: 0, BDE: 0 };
+    if (!chartDataMap[dateStr]) {
+      chartDataMap[dateStr] = { dateStr, year, month, day, dateObj: date, FTTB: 0, BDE: 0 };
     }
     
     const val = o.orderValue || 0;
     const isBDE = (o.orderType || "").toLowerCase().includes("bde") || (o.orderType || "").toLowerCase().includes("endleitung") || o.vosNumber;
     const type = isBDE ? "BDE" : "FTTB";
     
-    // Add base order value
-    chartDataMap[key][type] += val;
+    chartDataMap[dateStr][type] += val;
     
-    // Track for Anfahrt calculation
-    const dateStr = date.toISOString().split('T')[0];
     const groupKey = `${dateStr}_${o.vehicle || 'Pool'}`;
     
     if (type === "FTTB") {
-      if (!anfahrtGroups.FTTB[groupKey]) anfahrtGroups.FTTB[groupKey] = { year, month, count: 0 };
+      if (!anfahrtGroups.FTTB[groupKey]) anfahrtGroups.FTTB[groupKey] = { dateStr, count: 0 };
       anfahrtGroups.FTTB[groupKey].count += 1;
     } else {
-      if (!anfahrtGroups.BDE[groupKey]) anfahrtGroups.BDE[groupKey] = { year, month, count: 0 };
+      if (!anfahrtGroups.BDE[groupKey]) anfahrtGroups.BDE[groupKey] = { dateStr, count: 0 };
       anfahrtGroups.BDE[groupKey].count += 1;
     }
   });
   
-  // Fetch dynamic prices for Anfahrt
   const serviceItems = await prisma.serviceItem.findMany({
     where: { name: { contains: "Anfahrt" } }
   });
   
   const priceFttbLt12 = serviceItems.find(i => i.name.includes("<12"))?.defaultPrice || 85;
-  const priceFttbGt12 = serviceItems.find(i => i.name.includes(">12"))?.defaultPrice || 50;
-  const priceBde = serviceItems.find(i => i.name.includes("BDE") || i.name.includes("BdE"))?.defaultPrice || 60;
+  const priceFttbGt12 = serviceItems.find(i => i.name.includes(">12"))?.defaultPrice || 55;
+  const priceBde = serviceItems.find(i => i.name.includes("BdE") && i.name.includes("Anfahrt"))?.defaultPrice || 38;
 
-  // Apply FTTB Anfahrt
   Object.values(anfahrtGroups.FTTB).forEach(group => {
-    const key = `${group.year}-${group.month}`;
     if (group.count > 0) {
       const anfahrtPreis = group.count >= 12 ? priceFttbGt12 : priceFttbLt12;
-      chartDataMap[key]["FTTB"] += anfahrtPreis;
+      chartDataMap[group.dateStr]["FTTB"] += anfahrtPreis;
       closedValue += anfahrtPreis;
     }
   });
 
-  // Apply BDE Anfahrt
   Object.values(anfahrtGroups.BDE).forEach(group => {
-    const key = `${group.year}-${group.month}`;
     if (group.count > 0) {
-      chartDataMap[key]["BDE"] += priceBde;
+      chartDataMap[group.dateStr]["BDE"] += priceBde;
       closedValue += priceBde;
     }
   });
 
-
-  const chartData = Object.values(chartDataMap).sort((a, b) => {
-    if (a.year !== b.year) return a.year - b.year;
-    return a.month - b.month;
+  const chartData = Object.values(chartDataMap).sort((a: any, b: any) => {
+    return a.dateObj.getTime() - b.dateObj.getTime();
   });
 
   const formatEuro = (value: number) => {

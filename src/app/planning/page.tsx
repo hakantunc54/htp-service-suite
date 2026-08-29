@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getOrdersForPlanning, assignVehicleToOrder, deleteOrder } from "./actions";
 import { Vehicle } from "@/types";
-import { Calendar, Download, Map, CarFront, Trash2, AlertTriangle } from "lucide-react";
+import { Calendar, Download, Map, CarFront, Trash2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 
 type OrderData = Awaited<ReturnType<typeof getOrdersForPlanning>>[0];
@@ -12,6 +12,16 @@ export default function PlanningPage() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportVehicle, setExportVehicle] = useState<string | undefined>(undefined);
+  const [exportDate, setExportDate] = useState(() => {
+    const d = new Date();
+    const localYear = d.getFullYear();
+    const localMonth = String(d.getMonth() + 1).padStart(2, '0');
+    const localDay = String(d.getDate()).padStart(2, '0');
+    return `${localYear}-${localMonth}-${localDay}`;
+  });
 
   useEffect(() => {
     fetchData();
@@ -49,25 +59,33 @@ export default function PlanningPage() {
     }
   };
 
-  const handleExportCsv = (vehicleName?: string) => {
-    // 1. Welche Aufträge sollen exportiert werden? (Spezielles Auto oder Alle Autos)
-    let ordersToExport = vehicleName 
-      ? orders.filter(o => o.vehicle === vehicleName)
-      : orders.filter(o => o.vehicle !== null && o.vehicle !== ""); // Includes all assigned vehicles (Auto 1-3 AND T1-T4)
-    
-    // 2. Nur Aufträge von heute exportieren (oder Aufträge ganz ohne Fixtermin)
-    const todayStr = new Date().toISOString().split('T')[0];
+  const handleExportClick = (vehicleName?: string) => {
+    setExportVehicle(vehicleName);
+    setShowExportModal(true);
+  };
+
+  const runExportCsv = () => {
+    let ordersToExport = exportVehicle 
+      ? orders.filter(o => o.vehicle === exportVehicle)
+      : orders.filter(o => o.vehicle !== null && o.vehicle !== ""); 
+
     ordersToExport = ordersToExport.filter(o => {
-      if (!o.kundenTerminStart) return true; // Ohne Fixtermin (z.B. FTTB) darf mit
-      return new Date(o.kundenTerminStart).toISOString().split('T')[0] === todayStr; // Mit Fixtermin nur wenn heute
+      if (!o.kundenTerminStart) return true; 
+      
+      const d = new Date(o.kundenTerminStart);
+      const localYear = d.getFullYear();
+      const localMonth = String(d.getMonth() + 1).padStart(2, '0');
+      const localDay = String(d.getDate()).padStart(2, '0');
+      const orderDateStr = `${localYear}-${localMonth}-${localDay}`;
+      
+      return orderDateStr === exportDate;
     });
 
     if (ordersToExport.length === 0) {
-      toast.error(`Keine heutigen Aufträge ${vehicleName ? `für ${vehicleName} ` : ''}gefunden.`);
+      toast.error(`Keine Aufträge am ausgewählten Datum ${exportVehicle ? `für ${exportVehicle} ` : ''}gefunden.`);
       return;
     }
 
-    // 3. Sortieren: Nach Auto (falls Alle exportiert werden), dann nach Termin
     ordersToExport.sort((a, b) => {
       if (a.vehicle !== b.vehicle) {
         return (a.vehicle || "").localeCompare(b.vehicle || "");
@@ -78,7 +96,6 @@ export default function PlanningPage() {
       return 0;
     });
 
-    // xRoute Header
     const header = [
       "Tour", "Postleitzahl", "Stadt", "Straße", "Hausnummer", 
       "Fahrer", "Port", "Ansprechpartner", "Kundennummer", 
@@ -87,7 +104,6 @@ export default function PlanningPage() {
     ];
     
     const rows = ordersToExport.map(o => {
-      // Address parsing
       const addressStr = o.customer.address || "";
       const parts = addressStr.split(',');
       let streetPart = parts[0]?.trim() || "";
@@ -111,21 +127,17 @@ export default function PlanningPage() {
         hausnummer = streetMatch[2].trim();
       }
 
-      // Telephone
       const telefon = o.customer.mobile || o.customer.phone || "";
 
-      // Notice / Note
       let notiz = o.orderType || "";
       if (o.vosNumber) notiz += ` | VOS: ${o.vosNumber}`;
       if (o.estimatedDuration) notiz += ` | ${o.estimatedDuration} geplant`;
       
-      // Kontakthistorie hinzufügen (Letzte Notiz)
       const hist = (o as any).history;
       if (hist && hist.length > 0) {
         notiz += ` | NOTIZ: ${hist[0].content}`;
       }
 
-      // Time windows (default to service window 08:00 - 17:00 if not explicit)
       let fruehestens = "08:00";
       let spaetestens = "17:00";
       if (o.kundenTerminStart) {
@@ -137,40 +149,38 @@ export default function PlanningPage() {
       const displayName = isBde ? `BdE: ${o.customer.customerName}` : o.customer.customerName;
 
       const row = [
-        "", // Tour
+        "", 
         plz,
         stadt,
         strasse,
         hausnummer,
-        o.vehicle, // Fahrer
-        o.port || "", // Port
-        displayName, // Ansprechpartner (wie gewünscht)
+        o.vehicle,
+        o.port || "",
+        displayName,
         o.customer.customerNumber || "",
-        telefon, // Ansprechpartner Telefon
+        telefon,
         notiz,
-        displayName, // Name
-        telefon, // Name Telefon
-        o.id.substring(0, 8), // Referenz
+        displayName,
+        telefon,
+        o.id.substring(0, 8),
         fruehestens,
         spaetestens,
-        o.estimatedDuration ? o.estimatedDuration.replace(/\D/g,'') : "0" // Verweildauer
+        o.estimatedDuration ? o.estimatedDuration.replace(/\D/g,'') : "0"
       ];
 
-      // Escape quotes for CSV
       return row.map(cell => `"${(cell || "").replace(/"/g, '""')}"`);
     });
 
     const csvContent = [header.join(";"), ...rows.map(r => r.join(";"))].join("\n");
     
-    // UTF-8 BOM (\uFEFF) to fix Umlaute in Excel
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     
-    const fileName = vehicleName 
-      ? `xRoute_Export_${vehicleName.replace(' ', '_')}.csv`
-      : `xRoute_Export_Alle_Autos.csv`;
+    const fileName = exportVehicle 
+      ? `xRoute_Export_${exportDate}_${exportVehicle.replace(' ', '_')}.csv`
+      : `xRoute_Export_${exportDate}_Alle_Autos.csv`;
       
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
@@ -239,7 +249,7 @@ export default function PlanningPage() {
         </h1>
         
         <button 
-          onClick={() => handleExportCsv()}
+          onClick={() => handleExportClick()}
           className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-colors shadow-sm"
         >
           <Map className="w-5 h-5" />
@@ -379,7 +389,7 @@ export default function PlanningPage() {
               
               <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
                 <button 
-                  onClick={() => handleExportCsv(vehicle)}
+                  onClick={() => handleExportClick(vehicle)}
                   disabled={vehicleOrders.length === 0}
                   className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -391,6 +401,58 @@ export default function PlanningPage() {
           );
         })}
       </div>
+    
+      {/* Export Confirmation Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-semibold text-lg text-slate-800 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                Export Datum wählen
+              </h3>
+              <button onClick={() => setShowExportModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4 text-sm">
+                Bitte wählen Sie das Datum für den xRoute Tages-Export {exportVehicle ? `von ${exportVehicle}` : 'aller Autos'}.
+                Aufträge ohne Fixtermin werden automatisch in den Export inkludiert.
+              </p>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Export Datum</label>
+                <input 
+                  type="date"
+                  value={exportDate}
+                  onChange={e => setExportDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowExportModal(false)}
+                  className="px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Abbrechen
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowExportModal(false);
+                    runExportCsv();
+                  }}
+                  className="px-4 py-2 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Exportieren
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

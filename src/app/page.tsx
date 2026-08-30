@@ -27,17 +27,15 @@ export default async function Home() {
     where: { kundenTerminStart: { gte: startOfToday, lte: endOfToday } }
   });
 
-  const financialData = await prisma.order.aggregate({
-    _sum: { orderValue: true },
+  const openOrdersCount = await prisma.order.count({
     where: { isBilled: false, status: "Erfolgreich abgeschlossen" }
   });
-  
+
   const billedData = await prisma.order.aggregate({
     _sum: { orderValue: true },
     where: { isBilled: true }
   });
 
-  const openValue = financialData._sum.orderValue || 0;
   let closedValue = billedData._sum.orderValue || 0;
 
   
@@ -188,16 +186,15 @@ export default async function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4 border-l-4 border-l-orange-500">
-          <div className="bg-orange-50 p-4 rounded-full text-orange-500">
-            <Euro className="w-8 h-8" />
+            <div className="bg-orange-50 p-4 rounded-full text-orange-500">
+              <FileText className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-gray-500 font-medium text-sm">Zu erledigende Abrechnungen</h3>
+              <p className="text-3xl font-bold mt-1 text-slate-800">{openOrdersCount}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-gray-500 font-medium text-sm">Offener Abrechnungswert (Unerledigt)</h3>
-            <p className="text-3xl font-bold mt-1 text-slate-800">{formatEuro(openValue)}</p>
-          </div>
-        </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4 border-l-4 border-l-emerald-500">
           <div className="bg-emerald-50 p-4 rounded-full text-emerald-600">

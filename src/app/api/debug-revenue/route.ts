@@ -75,17 +75,25 @@ export async function GET(request: Request) {
   
   const exportAnfahrtGroups: Record<string, number> = {};
   
+  let discrepancyLog = "";
+
   fttbOrders.forEach(o => {
     let orderExportBase = 0;
     o.services.forEach(s => {
       if (!s.serviceItem.name.toLowerCase().includes('anfahrt') && s.serviceItem.name !== "DPU Aufbau") {
-         // Export outputs quantity. User multiplies by header in Excel. We assume header = defaultPrice.
-         // Except for 'Optional / Material (FTTB)' which uses priceApplied in export.
+         
+         let excelCalculatedPrice = 0;
          if (s.serviceItem.name === "Optional / Material (FTTB)") {
-            orderExportBase += s.priceApplied || 0;
+            excelCalculatedPrice = s.priceApplied || 0;
          } else {
-            orderExportBase += s.quantity * (s.serviceItem.defaultPrice || 0);
+            excelCalculatedPrice = s.quantity * (s.serviceItem.defaultPrice || 0);
          }
+         
+         if (s.priceApplied !== excelCalculatedPrice) {
+             discrepancyLog += `Mismatch found in Order for ${o.customer.customerName} (Termin: ${o.kundenTerminStart?.toLocaleDateString()}): Item '${s.serviceItem.name}' -> Dashboard used priceApplied: ${s.priceApplied} €, but Excel logic calculates: ${s.quantity} qty * ${s.serviceItem.defaultPrice} = ${excelCalculatedPrice} €\n`;
+         }
+
+         orderExportBase += excelCalculatedPrice;
       }
     });
     exportBase += orderExportBase;
@@ -127,7 +135,9 @@ export async function GET(request: Request) {
       }
       if (dashboardBase !== exportBase) {
           report += `- Base revenue differs! Dashboard sum of priceApplied is ${dashboardBase}, but Export Quantity * CurrentPrice is ${exportBase}.\n`;
-          report += `- This happens if you changed prices in the CRM settings recently. Dashboard uses the old prices from when the order was billed, but your Excel multiplies everything by the new prices!\n`;
+          report += `- This happens if you changed prices in the CRM settings recently. Dashboard uses the old prices from when the order was billed, but your Excel multiplies everything by the new prices!\n\n`;
+          report += `HERE IS THE EXACT LIST OF DISCREPANCIES:\n`;
+          report += discrepancyLog;
       }
   } else {
       report += `- The CRM logic perfectly matches! If your Excel sheet says 15.005,50 €, it means you typed a different price in your Excel Headers than what is saved in the CRM Settings!\n`;

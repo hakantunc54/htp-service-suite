@@ -104,6 +104,7 @@ model ServiceItem {
   description String?
   category    String   @default("ALL") // "FTTB", "BDE", "ALL"
   defaultPrice Float?  
+  orgamaxArticle String? // Artikelnummer in OrgaMAX für den API Export
   
   orderItems  OrderServiceItem[]
 }

@@ -50,13 +50,24 @@ export async function saveBilling(
     });
   }
 
+  // Bestimme den finalen Status anhand der abgerechneten Positionen
+  const serviceItemIds = items.map(i => i.serviceItemId);
+  const billedServiceItems = await prisma.serviceItem.findMany({
+    where: { id: { in: serviceItemIds } }
+  });
+  
+  const hasAbbruch = billedServiceItems.some(si => 
+    si.name.toLowerCase().includes("abbruch") || si.name.toLowerCase().includes("kvhdf")
+  );
+  const finalStatus = hasAbbruch ? "Abbruch" : "Erfolgreich abgeschlossen";
+
   // Update order totals
   await prisma.order.update({
     where: { id: orderId },
     data: {
       isBilled: true,
       orderValue: totalAmount,
-      status: "Erfolgreich abgeschlossen", // Set status to completed automatically when billed
+      status: finalStatus,
       apartmentLocation,
         technicianRemark,
           ...(vehicle !== undefined && { vehicle }),

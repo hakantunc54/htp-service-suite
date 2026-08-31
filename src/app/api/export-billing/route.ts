@@ -218,19 +218,28 @@ export async function GET(request: Request) {
       }
     }
 
-    // Zeilen sortieren: Erst nach Datum, dann nach Techniker (Auto 1, Auto 2 etc.)
-    const sortRows = (a: any, b: any) => {
-      // 1. Nach Datum (ISO-Format yyyy-mm-dd sortiert sich auch alphabetisch korrekt)
-      const dateA = a.Termin.split('.').reverse().join('-'); // von DD.MM.YYYY zu YYYY-MM-DD
-      const dateB = b.Termin.split('.').reverse().join('-');
-      if (dateA !== dateB) {
-        return dateA.localeCompare(dateB);
-      }
-      // 2. Nach Techniker
-      const techA = a.Techniker || "";
-      const techB = b.Techniker || "";
-      return techA.localeCompare(techB, undefined, { numeric: true, sensitivity: 'base' });
-    };
+      // Zeilen sortieren: Erst nach Datum, dann nach Techniker (Auto 1, Auto 2 etc.)
+      const sortRows = (a: any, b: any) => {
+        // 1. Nach Datum (richtig als Date vergleichen statt alphabetisch)
+        const parseDate = (dStr: string) => {
+          if (!dStr) return 0;
+          const parts = dStr.split('.');
+          if (parts.length !== 3) return 0;
+          return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+        };
+        
+        const dateA = parseDate(a.Termin);
+        const dateB = parseDate(b.Termin);
+        
+        if (dateA !== dateB) {
+          return dateA - dateB;
+        }
+        
+        // 2. Nach Techniker
+        const techA = a.Techniker || "";
+        const techB = b.Techniker || "";
+        return techA.localeCompare(techB, undefined, { numeric: true, sensitivity: 'base' });
+      };
 
 
     fttbRows.sort(sortRows);

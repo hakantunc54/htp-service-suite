@@ -70,10 +70,13 @@ export default async function Home() {
 
   allBilledOrders.forEach(o => {
     const date = o.kundenTerminStart || o.updatedAt;
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const day = date.getDate();
-    const dateStr = date.toISOString().split('T')[0];
+    
+    // FIX TIMEZONE BUG: Ensure we group by the local Berlin day, regardless of Proxmox server timezone
+    const dateStr = date.toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }); // "YYYY-MM-DD"
+    const [yStr, mStr, dStr] = dateStr.split('-');
+    const year = parseInt(yStr, 10);
+    const month = parseInt(mStr, 10) - 1; // JS months are 0-indexed
+    const day = parseInt(dStr, 10);
     
     if (!chartDataMap[dateStr]) {
       chartDataMap[dateStr] = { dateStr, year, month, day, dateObj: date, FTTB: 0, BDE: 0 };

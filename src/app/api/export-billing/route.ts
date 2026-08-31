@@ -106,7 +106,7 @@ export async function GET(request: Request) {
     const fttbGroups: Record<string, typeof fttbOrders> = {};
     fttbOrders.forEach((o: any) => {
       const effDate = o.kundenTerminStart || o.updatedAt;
-      const dateStr = effDate ? effDate.toISOString().split('T')[0] : 'unknown';
+      const dateStr = effDate ? effDate.toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }) : 'unknown';
       const key = `${dateStr}_${o.vehicle || 'Pool'}`;
       if (!fttbGroups[key]) fttbGroups[key] = [];
       fttbGroups[key].push(o);
@@ -132,7 +132,7 @@ export async function GET(request: Request) {
 
         const effDate = order.kundenTerminStart || order.updatedAt;
         const row = {
-          "Termin": effDate ? effDate.toLocaleDateString('de-DE') : "",
+          "Termin": effDate ? effDate.toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin' }) : "",
           "PLZ": addr.plz,
           "Ort": addr.ort,
           "Strasse": addr.street,
@@ -169,7 +169,7 @@ export async function GET(request: Request) {
     const bdeGroups: Record<string, typeof bdeOrders> = {};
     bdeOrders.forEach((o: any) => {
       const effDate = o.kundenTerminStart || o.updatedAt;
-      const dateStr = effDate ? effDate.toISOString().split('T')[0] : 'unknown';
+      const dateStr = effDate ? effDate.toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }) : 'unknown';
       const key = `${dateStr}_${o.vehicle || 'Pool'}`;
       if (!bdeGroups[key]) bdeGroups[key] = [];
       bdeGroups[key].push(o);
@@ -193,7 +193,7 @@ export async function GET(request: Request) {
 
         const effDate = order.kundenTerminStart || order.updatedAt;
         const row = {
-          "Termin": effDate ? effDate.toLocaleDateString('de-DE') : "",
+          "Termin": effDate ? effDate.toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin' }) : "",
           "PLZ": addr.plz,
           "Ort": addr.ort,
           "Strasse": addr.street,

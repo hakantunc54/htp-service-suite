@@ -82,9 +82,9 @@ export async function GET(request: Request) {
          // Export outputs quantity. User multiplies by header in Excel. We assume header = defaultPrice.
          // Except for 'Optional / Material (FTTB)' which uses priceApplied in export.
          if (s.serviceItem.name === "Optional / Material (FTTB)") {
-            orderExportBase += s.priceApplied;
+            orderExportBase += s.priceApplied || 0;
          } else {
-            orderExportBase += s.quantity * s.serviceItem.defaultPrice;
+            orderExportBase += s.quantity * (s.serviceItem.defaultPrice || 0);
          }
       }
     });

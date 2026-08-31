@@ -60,22 +60,35 @@ Materialaufwand:
   if (!isOpen) return null;
 
   const handleSetQuantity = (itemId: string, defaultPrice: number | null, rawValue: string) => {
-    // Erlaube leere Eingaben whrend des Tippens (werden als 0 gewertet)
+    // Erlaube leere Eingaben während des Tippens (werden als 0 gewertet)
     const val = rawValue.trim() === '' ? 0 : parseFloat(rawValue.replace(',', '.'));
-    const qty = isNaN(val) ? 0 : val;
+    const qtyOrPrice = isNaN(val) ? 0 : val;
 
     setEditedServices(prev => {
       const existingIdx = prev.findIndex(s => s.serviceItemId === itemId);
       let newServices = [...prev];
       
+      const itemDef = availableItems.find(i => i.id === itemId);
+      const isVariable = itemDef && (itemDef.name.toLowerCase().includes("optional") || itemDef.name.toLowerCase().includes("material"));
+
       if (existingIdx >= 0) {
-        if (qty <= 0) {
+        if (qtyOrPrice <= 0) {
           newServices.splice(existingIdx, 1);
         } else {
-          newServices[existingIdx].quantity = qty;
+          if (isVariable) {
+            newServices[existingIdx].quantity = 1;
+            newServices[existingIdx].priceApplied = qtyOrPrice;
+          } else {
+            newServices[existingIdx].quantity = qtyOrPrice;
+            newServices[existingIdx].priceApplied = qtyOrPrice * (defaultPrice || 0);
+          }
         }
-      } else if (qty > 0) {
-        newServices.push({ serviceItemId: itemId, quantity: qty, priceApplied: defaultPrice || 0 });
+      } else if (qtyOrPrice > 0) {
+        if (isVariable) {
+          newServices.push({ serviceItemId: itemId, quantity: 1, priceApplied: qtyOrPrice });
+        } else {
+          newServices.push({ serviceItemId: itemId, quantity: qtyOrPrice, priceApplied: qtyOrPrice * (defaultPrice || 0) });
+        }
       }
       return newServices;
     });
@@ -104,7 +117,7 @@ Materialaufwand:
   const conflict = hasFttb && (hasKvhdf || hasKeinZugang || hasAbbruch);
 
   const calculateTotal = () => {
-    return editedServices.reduce((sum, item) => sum + ((item.priceApplied || 0) * item.quantity), 0);
+    return editedServices.reduce((sum, item) => sum + (item.priceApplied || 0), 0);
   };
 
   const handleSaveClick = async () => {
@@ -170,31 +183,43 @@ Materialaufwand:
                 });
   
             })().map(item => {
-              const current = editedServices.find(s => s.serviceItemId === item.id);
-              const qty = current ? current.quantity : 0;
-              
-              // Highlight selected
-              const isSelected = qty > 0;
-              
-              return (
-                <div key={item.id} className={`flex items-center justify-between p-3 rounded-lg border ${isSelected ? 'border-blue-300 bg-blue-50/50' : 'border-gray-200 bg-white'}`}>
-                  <div>
-                    <div className="font-semibold text-slate-800">{item.name}</div>
-                    <div className="text-xs text-gray-500">{item.defaultPrice?.toFixed(2).replace('.', ',')} EUR</div>
-                  </div>
-                  
-                  <div className="w-24">
-                      <input 
-                        type="number"
-                        min="0"
-                        step={item.name.toLowerCase().includes("arbeitszeit") || item.name.toLowerCase().includes("bde") ? "0.01" : "1"}
-                        className="w-full text-right border-gray-300 rounded-lg py-2 px-3 focus:ring-blue-500 outline-none text-sm bg-gray-50 border"
-                        value={qty || ""}
-                        placeholder="0"
-                        onChange={(e) => handleSetQuantity(item.id, item.defaultPrice, e.target.value)}
-                      />
+                const current = editedServices.find(s => s.serviceItemId === item.id);
+                const isVariable = item.name.toLowerCase().includes("optional") || item.name.toLowerCase().includes("material");
+                const qty = current ? current.quantity : 0;
+                const priceApp = current ? (current.priceApplied || 0) : 0;
+                
+                // Highlight selected
+                const isSelected = qty > 0;
+                const rowTotal = current ? (current.priceApplied || 0) : 0;
+
+                return (
+                  <div 
+                    key={item.id} 
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${isSelected ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-blue-300'}`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-gray-800">{item.name}</span>
+                      {!isVariable && <span className="text-xs text-gray-500">{item.defaultPrice} € / Einheit</span>}
+                      {isVariable && <span className="text-xs text-blue-500">Freie Eingabe (Summe)</span>}
                     </div>
-                </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="w-24">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="w-full text-right border-gray-300 rounded-lg py-2 px-3 focus:ring-blue-500 outline-none text-sm bg-gray-50 border"
+                          value={isSelected ? (isVariable ? priceApp : qty) : ""}
+                          placeholder="0"
+                          onChange={(e) => handleSetQuantity(item.id, item.defaultPrice, e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="w-20 text-right font-bold text-gray-700">
+                        {isSelected ? `${rowTotal.toFixed(2)} €` : "0.00 €"}
+                      </div>
+                    </div>
+                  </div>
               );
             })}
           </div>

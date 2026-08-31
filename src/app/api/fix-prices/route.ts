@@ -32,7 +32,7 @@ export async function GET() {
         
         // Also update the total order value
         const allItemsInOrder = await prisma.orderServiceItem.findMany({ where: { orderId: item.orderId } });
-        const newOrderTotal = allItemsInOrder.reduce((sum, i) => sum + (i.id === item.id ? expectedTotal : i.priceApplied), 0);
+        const newOrderTotal = allItemsInOrder.reduce((sum, i) => sum + (i.id === item.id ? expectedTotal : (i.priceApplied || 0)), 0);
         
         await prisma.order.update({
           where: { id: item.orderId },

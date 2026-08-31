@@ -28,7 +28,7 @@ export default async function Home() {
   });
 
   const openOrdersCount = await prisma.order.count({
-    where: { isBilled: false, status: "Erfolgreich abgeschlossen" }
+    where: { isBilled: false, status: { in: ["Erfolgreich abgeschlossen", "Abbruch"] } }
   });
 
   const billedData = await prisma.order.aggregate({
@@ -41,7 +41,7 @@ export default async function Home() {
   
   // All completed orders for the chart
   const allBilledOrders = await prisma.order.findMany({
-    where: { status: "Erfolgreich abgeschlossen" },
+    where: { isBilled: true },
     select: { 
       orderValue: true, 
       orderType: true, 

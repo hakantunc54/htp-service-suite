@@ -1,28 +1,55 @@
-const fs = require('fs');
-let code = fs.readFileSync('src/app/import/actions.ts', 'utf8');
+const fs = require("fs");
+let content = fs.readFileSync("src/app/import/actions.ts", "utf8");
 
-const oldCode = `        if (orderData.isTerminabsprache) {
-          await prisma.historyEntry.create({
-            data: {
-              orderId: newOrder.id,
-              type: "SYSTEM",
-              content: "Terminabsprachen-Auftrag importiert"
-            }
+const oldCode = `      for (const orderData of orders) {
+        // Create or find customer
+        let customer = await prisma.customer.findUnique({
+          where: { customerNumber: orderData.customerNumber || "N/A" }
+        });`;
+
+const newCode = `      for (const orderData of orders) {
+        // Create or find customer
+        let pastOrdersStr = "";
+        let customer = await prisma.customer.findUnique({
+          where: { customerNumber: orderData.customerNumber || "N/A" }
+        });
+        
+        if (customer) {
+          const pastOrders = await prisma.order.findMany({
+            where: { 
+              customerId: customer.id,
+              ...(orderData.port ? { port: orderData.port } : {})
+            },
+            orderBy: { kundenTerminStart: 'desc' }
           });
+          
+          if (pastOrders.length > 0) {
+            const hadAbbruch = pastOrders.some(o => o.status === "Abbruch" || o.status === "Storniert" || (o.technicianRemark && o.technicianRemark.toLowerCase().includes("abbruch")));
+            const historyText = pastOrders.map(o => {
+               const d = o.kundenTerminStart ? new Date(o.kundenTerminStart).toLocaleDateString("de-DE", {timeZone:"Europe/Berlin"}) : "Unbekannt";
+               return \`\${d} (\${o.status})\`;
+            }).join(", ");
+            
+            if (hadAbbruch) {
+              pastOrdersStr = \`ACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: \${historyText}. Bitte alte Aktennotizen und Material prüfen!\`;
+            } else {
+              pastOrdersStr = \`ACHTUNG: Kunde/Port war bereits im System! Vorherige Termine: \${historyText}. Bitte alte Aktennotizen prüfen!\`;
+            }
+          }
         }`;
 
-const newCode = `        // Always create a system history entry logging the port and address at import time
-        const baseMsg = orderData.isTerminabsprache 
-          ? "Terminabsprachen-Auftrag importiert." 
-          : \`Auftrag via Smart Import angelegt. Servicefenster: \${orderData.htpPlanfenster || "Keines"}\`;
-        
-        await prisma.historyEntry.create({
-          data: {
-            orderId: newOrder.id,
-            type: "SYSTEM",
-            content: \`\${baseMsg}\\nAnschlussadresse: \${orderData.address || "Unbekannt"}\\nPort/Netzelement: \${orderData.port || "Fehlt"}\`
+content = content.replace(oldCode, newCode);
+
+const oldCode2 = `            port: orderData.port,
           }
         });`;
 
-code = code.replace(oldCode, newCode);
-fs.writeFileSync('src/app/import/actions.ts', code, 'utf8');
+const newCode2 = `            port: orderData.port,
+            technicianRemark: pastOrdersStr || undefined,
+          }
+        });`;
+
+content = content.replace(oldCode2, newCode2);
+
+fs.writeFileSync("src/app/import/actions.ts", content);
+console.log("Success");

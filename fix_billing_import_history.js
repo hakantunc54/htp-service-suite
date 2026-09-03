@@ -2,19 +2,16 @@ const fs = require("fs");
 let content = fs.readFileSync("src/app/import/actions.ts", "utf8");
 
 content = content.replace(
-  /\/\/ Create or find customer[\s\S]*?let customer = await prisma\.customer\.findUnique\(\{[\s\S]*?where: \{ customerNumber: orderData\.customerNumber \|\| "N\/A" \}[\s\S]*?\}\);/,
-  `// Create or find customer
+  /let customer = null;[\s\S]*?if \(custNum\) \{[\s\S]*?customer = await prisma\.customer\.findUnique\(\{ where: \{ customerNumber: custNum \} \}\);[\s\S]*?\}/,
+  `let customer = null;
         let pastOrdersStr = "";
-        let customer = await prisma.customer.findUnique({
-          where: { customerNumber: orderData.customerNumber || "N/A" }
-        });
+        if (custNum) {
+          customer = await prisma.customer.findUnique({ where: { customerNumber: custNum } });
+        }
         
         if (customer) {
           const pastOrders = await prisma.order.findMany({
-            where: { 
-              customerId: customer.id,
-              ...(orderData.port ? { port: orderData.port } : {})
-            },
+            where: { customerId: customer.id, ...(port ? { port: port } : {}) },
             orderBy: { kundenTerminStart: 'desc' }
           });
           
@@ -35,11 +32,8 @@ content = content.replace(
 );
 
 content = content.replace(
-  /port: orderData\.port,\s*\}\s*\}\);/,
-  `port: orderData.port,
-            technicianRemark: pastOrdersStr || undefined,
-          }
-        });`
+  /technicianRemark: bem,/g,
+  `technicianRemark: bem + pastOrdersStr,`
 );
 
 fs.writeFileSync("src/app/import/actions.ts", content);

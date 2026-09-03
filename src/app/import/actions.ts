@@ -10,9 +10,34 @@ export async function saveImportedOrders(orders: ParsedOrder[], targetDateStr?: 
   try {
     for (const orderData of orders) {
       // Create or find customer
-      let customer = await prisma.customer.findUnique({
-        where: { customerNumber: orderData.customerNumber || "N/A" }
-      });
+        let pastOrdersStr = "";
+        let customer = await prisma.customer.findUnique({
+          where: { customerNumber: orderData.customerNumber || "N/A" }
+        });
+        
+        if (customer) {
+          const pastOrders = await prisma.order.findMany({
+            where: { 
+              customerId: customer.id,
+              ...(orderData.port ? { port: orderData.port } : {})
+            },
+            orderBy: { kundenTerminStart: 'desc' }
+          });
+          
+          if (pastOrders.length > 0) {
+            const hadAbbruch = pastOrders.some(o => o.status === "Abbruch" || o.status === "Storniert" || (o.technicianRemark && o.technicianRemark.toLowerCase().includes("abbruch")));
+            const historyText = pastOrders.map(o => {
+               const d = o.kundenTerminStart ? new Date(o.kundenTerminStart).toLocaleDateString("de-DE", {timeZone:"Europe/Berlin"}) : "Unbekannt";
+               return `${d} (${o.status})`;
+            }).join(", ");
+            
+            if (hadAbbruch) {
+              pastOrdersStr = `\n\nACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen und Material pr�fen!`;
+            } else {
+              pastOrdersStr = `\n\nACHTUNG: Kunde/Port war bereits im System! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen pr�fen!`;
+            }
+          }
+        }
 
       if (!customer) {
         customer = await prisma.customer.create({
@@ -51,8 +76,9 @@ export async function saveImportedOrders(orders: ParsedOrder[], targetDateStr?: 
             vosNumber: orderData.vosNumber,
           broadbandTechnology: orderData.broadbandTechnology,
           port: orderData.port,
-        }
-      });
+            technicianRemark: pastOrdersStr || undefined,
+          }
+        });
       
               // Always create a system history entry logging the port and address at import time
         const baseMsg = orderData.isTerminabsprache 
@@ -193,9 +219,31 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
 
       // 1. Kunde finden oder erstellen
       let customer = null;
-      if (custNum) {
-        customer = await prisma.customer.findUnique({ where: { customerNumber: custNum } });
-      }
+        let pastOrdersStr = "";
+        if (custNum) {
+          customer = await prisma.customer.findUnique({ where: { customerNumber: custNum } });
+        }
+        
+        if (customer) {
+          const pastOrders = await prisma.order.findMany({
+            where: { customerId: customer.id, ...(port ? { port: port } : {}) },
+            orderBy: { kundenTerminStart: 'desc' }
+          });
+          
+          if (pastOrders.length > 0) {
+            const hadAbbruch = pastOrders.some(o => o.status === "Abbruch" || o.status === "Storniert" || (o.technicianRemark && o.technicianRemark.toLowerCase().includes("abbruch")));
+            const historyText = pastOrders.map(o => {
+               const d = o.kundenTerminStart ? new Date(o.kundenTerminStart).toLocaleDateString("de-DE", {timeZone:"Europe/Berlin"}) : "Unbekannt";
+               return `${d} (${o.status})`;
+            }).join(", ");
+            
+            if (hadAbbruch) {
+              pastOrdersStr = `\n\nACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen und Material pr�fen!`;
+            } else {
+              pastOrdersStr = `\n\nACHTUNG: Kunde/Port war bereits im System! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen pr�fen!`;
+            }
+          }
+        }
       if (!customer) {
         customer = await prisma.customer.create({
           data: {
@@ -210,12 +258,19 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
       // 2. Order anlegen (als Abgeschlossen)
             // Wir schauen, ob es irgendwelche Leistungs-Werte in der Zeile gibt
       let hasBillingItems = false;
-      for (const [colName, val] of Object.entries(row)) {
-        if (columnMap[colName] && Number(val) > 0) hasBillingItems = true;
-      }
-
-      // Wenn Leistungen da sind -> Abgeschlossen. Wenn nicht -> Termin vereinbart (bereit zur Abrechnung!)
-      const initialStatus = hasBillingItems ? "Erfolgreich abgeschlossen" : "Termin vereinbart";
+        let isAbbruch = false;
+        for (const [colName, val] of Object.entries(row)) {
+          const targetName = columnMap[colName];
+          if (targetName && Number(val) > 0) {
+            hasBillingItems = true;
+            if (targetName.toLowerCase().includes("abbruch") || targetName.toLowerCase().includes("kvhdf")) {
+              isAbbruch = true;
+            }
+          }
+        }
+  
+        // Wenn Leistungen da sind -> Abgeschlossen. Wenn Abbruch -> Abbruch.
+        const initialStatus = isAbbruch ? "Abbruch" : (hasBillingItems ? "Erfolgreich abgeschlossen" : "Termin vereinbart");
       const initialBilled = hasBillingItems;
 
       const order = await prisma.order.create({
@@ -227,7 +282,7 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
           kundenTerminStart: termin,
           vehicle,
           port,
-          technicianRemark: bem,
+          technicianRemark: bem + pastOrdersStr,
           apartmentLocation: weLage,
           isBilled: initialBilled,
           orderValue: 0

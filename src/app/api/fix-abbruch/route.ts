@@ -32,7 +32,7 @@ export async function GET() {
     }
   }
   
-  return new NextResponse(`Fertig! Es wurden ${fixed} bestehende Aufträge korrigiert.\n\n${log}`, {
+  return new NextResponse(`Fertig! Es wurden ${fixed} bestehende Auftraege korrigiert.\n\n${log}`, {
     headers: { "Content-Type": "text/plain; charset=utf-8" }
   });
 }

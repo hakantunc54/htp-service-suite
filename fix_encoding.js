@@ -1,15 +1,43 @@
 const fs = require('fs');
-let code = fs.readFileSync('src/app/orders/[id]/page.tsx', 'utf8');
+const content = `import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-// Replace the corrupted string
-code = code.replace('f\ufffd\ufffdr', 'f\u00fcr');
-code = code.replace('f\ufffdr', 'f\u00fcr');
-code = code.replace('f\uFFFD\uFFFDr', 'f\u00fcr');
-code = code.replace('f\uFFFDr', 'f\u00fcr');
+const prisma = new PrismaClient();
 
-// Just to be absolutely safe, let's replace by exact string matching the current text
-code = code.replace(/Abbruch & Neu klonen \(f.*?2\. Anfahrt\)/g, 'Abbruch & Neu klonen (f\u00fcr 2. Anfahrt)');
-code = code.replace(/Auftrag klonen \(f.*? neuen Termin nach Abbruch\)/g, 'Auftrag klonen (f\u00fcr neuen Termin nach Abbruch)');
+export async function GET() {
+  const items = await prisma.orderServiceItem.findMany({
+    include: {
+      serviceItem: true,
+      order: { include: { customer: true } }
+    },
+    where: {
+      serviceItem: {
+        name: {
+          contains: "Abbruch"
+        }
+      },
+      quantity: { gt: 0 }
+    }
+  });
 
-fs.writeFileSync('src/app/orders/[id]/page.tsx', code, 'utf8');
-console.log("Fixed encoding");
+  let fixed = 0;
+  let log = "";
+  for (const item of items) {
+    if (item.order.status === "Erfolgreich abgeschlossen" || item.order.status === "Neu") {
+      await prisma.order.update({
+        where: { id: item.orderId },
+        data: { status: "Abbruch" }
+      });
+      fixed++;
+      log += \`Korrigiert: \${item.order.customer?.customerName || "Unbekannt"} -> Neuer Status: Abbruch\\n\`;
+    }
+  }
+  
+  return new NextResponse(\`Fertig! Es wurden \${fixed} bestehende Auftraege korrigiert.\\n\\n\${log}\`, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" }
+  });
+}
+`;
+
+fs.writeFileSync('src/app/api/fix-abbruch/route.ts', content, 'utf8');
+console.log('Successfully wrote route.ts with utf8 encoding');

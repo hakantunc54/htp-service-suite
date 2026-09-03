@@ -32,9 +32,9 @@ export async function saveImportedOrders(orders: ParsedOrder[], targetDateStr?: 
             }).join(", ");
             
             if (hadAbbruch) {
-              pastOrdersStr = `\n\nACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen und Material pr�fen!`;
+              pastOrdersStr = `\n\nACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen und Material prüfen!`;
             } else {
-              pastOrdersStr = `\n\nACHTUNG: Kunde/Port war bereits im System! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen pr�fen!`;
+              pastOrdersStr = `\n\nACHTUNG: Kunde/Port war bereits im System! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen prüfen!`;
             }
           }
         }
@@ -238,9 +238,9 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
             }).join(", ");
             
             if (hadAbbruch) {
-              pastOrdersStr = `\n\nACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen und Material pr�fen!`;
+              pastOrdersStr = `\n\nACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen und Material prüfen!`;
             } else {
-              pastOrdersStr = `\n\nACHTUNG: Kunde/Port war bereits im System! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen pr�fen!`;
+              pastOrdersStr = `\n\nACHTUNG: Kunde/Port war bereits im System! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen prüfen!`;
             }
           }
         }

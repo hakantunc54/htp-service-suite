@@ -10,7 +10,7 @@ export async function getOrdersForPlanning() {
   return await prisma.order.findMany({
     where: {
       status: {
-        notIn: ["Erfolgreich abgeschlossen", "Storniert", "Abgerechnet", "Archiviert", "Termin abstimmen"]
+        notIn: ["Erfolgreich abgeschlossen", "Storniert", "Abbruch", "Abgerechnet", "Archiviert", "Termin abstimmen"]
       }
     },
     include: {

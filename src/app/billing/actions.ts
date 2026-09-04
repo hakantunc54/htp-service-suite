@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 export async function getBillingData() {
   return await prisma.order.findMany({
     where: {
-      status: "Erfolgreich abgeschlossen"
+      status: { in: ["Erfolgreich abgeschlossen", "Abbruch"] }
     },
     include: {
       customer: true,

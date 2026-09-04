@@ -312,7 +312,7 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
                qty = 1;
             } else {
                const customPrice = (priceOverrides && priceOverrides[targetName] !== undefined) ? priceOverrides[targetName] : (si.defaultPrice || 0);
-                 priceToApply = customPrice * qty;
+                 priceToApply = customPrice;
             }
 
             await prisma.orderServiceItem.create({

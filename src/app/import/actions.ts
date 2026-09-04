@@ -320,11 +320,11 @@ export async function saveHistoricalExcelData(rows: any[], priceOverrides?: Reco
                 orderId: order.id,
                 serviceItemId: si.id,
                 quantity: qty,
-                priceApplied: priceToApply
+                priceApplied: priceToApply * qty
               }
             });
 
-            totalValue += priceToApply;
+            totalValue += priceToApply * qty;
           }
         }
       }

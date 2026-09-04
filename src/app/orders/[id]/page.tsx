@@ -239,7 +239,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {order.services.map(s => (
                   <li key={s.id} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0 last:pb-0">
                     <span className="text-slate-700"><span className="font-medium text-slate-500 mr-2">{s.quantity}x</span> {s.serviceItem.name}</span>
-                    <span className="font-mono text-slate-600">{((s.priceApplied || 0) * s.quantity).toFixed(2).replace('.', ',')} €</span>
+                    <span className="font-mono text-slate-600">{(s.priceApplied || 0).toFixed(2).replace(".", ",")} €</span>
                   </li>
                 ))}
                 <li className="flex justify-between items-center text-sm pt-2 mt-2 border-t border-gray-100 font-bold">

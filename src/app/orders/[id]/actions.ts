@@ -30,7 +30,7 @@ export async function getAvailableServiceItems() {
 
 export async function updateOrderServices(orderId: string, servicesToSave: { serviceItemId: string, quantity: number, priceApplied: number }[], newRemark?: string, newBdeStatus?: string, newMaterialDetails?: string) {
   // First, calculate new order value
-  const newOrderValue = servicesToSave.reduce((sum, item) => sum + (item.priceApplied * item.quantity), 0);
+  const newOrderValue = servicesToSave.reduce((sum, item) => sum + (item.priceApplied || 0), 0);
 
   // Use a transaction to delete old services, insert new ones, and update order value
   await prisma.$transaction(async (tx) => {

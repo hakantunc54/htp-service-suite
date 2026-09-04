@@ -27,9 +27,10 @@ export async function saveImportedOrders(orders: ParsedOrder[], targetDateStr?: 
           if (pastOrders.length > 0) {
             const hadAbbruch = pastOrders.some(o => o.status === "Abbruch" || o.status === "Storniert" || (o.technicianRemark && o.technicianRemark.toLowerCase().includes("abbruch")));
             const historyText = pastOrders.map(o => {
-               const d = o.kundenTerminStart ? new Date(o.kundenTerminStart).toLocaleDateString("de-DE", {timeZone:"Europe/Berlin"}) : "Unbekannt";
-               return `${d} (${o.status})`;
-            }).join(", ");
+                const d = o.kundenTerminStart ? new Date(o.kundenTerminStart).toLocaleDateString("de-DE", {timeZone:"Europe/Berlin"}) : "Unbekannt";
+                const remark = o.technicianRemark ? o.technicianRemark.replace(/ACHTUNG:[\s\S]*/g, '').trim() : '';
+                return `${d} (${o.status})${remark ? ` - Notiz: "${remark}"` : ''}`;
+              }).join("\n");
             
             if (hadAbbruch) {
               pastOrdersStr = `\n\nACHTUNG: Kunde hatte bereits einen ABBRUCH auf diesem Port! Vorherige Termine: ${historyText}. Bitte alte Aktennotizen und Material prüfen!`;

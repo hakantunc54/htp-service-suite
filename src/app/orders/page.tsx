@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { getOrders, getServiceItems, saveBilling, deleteOrder } from "./actions";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Users, Search, ChevronRight, Calculator, FileCheck2, Filter, X, CheckCircle2, Trash2 } from "lucide-react";
+import { Users, Search, ChevronRight, Calculator, FileCheck2, Filter, X, CheckCircle2, Trash2 , AlertTriangle} from "lucide-react";
 import { toast } from "sonner";
 
 type OrderData = Awaited<ReturnType<typeof getOrders>>[0];
@@ -566,7 +566,17 @@ function OrdersContent() {
                 {filteredOrders.map(order => (
                   <tr key={order.id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900">{order.customer.customerName}</div>
+                      <div className="font-bold text-slate-900 flex items-center gap-2">
+                          {order.customer.customerName}
+                          {order.technicianRemark && order.technicianRemark.includes('ACHTUNG:') && (
+                            <div className="group relative flex items-center">
+                              <AlertTriangle className="w-5 h-5 text-red-500 animate-pulse" />
+                              <div className="absolute left-full ml-2 w-64 p-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 shadow-xl whitespace-pre-wrap">
+                                {order.technicianRemark}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       <div className="text-xs text-gray-500">Kd-Nr: {order.customer.customerNumber || '-'}</div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">{order.customer.address}</td>

@@ -9,7 +9,7 @@ type SettingsData = Awaited<ReturnType<typeof getSettingsData>>;
 
 export default function SettingsPage() {
   const [data, setData] = useState<SettingsData | null>(null);
-  const [activeTab, setActiveTab] = useState<"catalog" | "sms" | "users">("catalog");
+  const [activeTab, setActiveTab] = useState<"catalog" | "sms" | "users" | "database">("catalog");
   const [loading, setLoading] = useState(true);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordModalUser, setPasswordModalUser] = useState({ id: "", name: "" });

@@ -12,7 +12,13 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    const dbPath = path.join(process.cwd(), "htp-data", "dev.db");
+    
+  let dbPath = "/data/dev.db";
+  if (!fs.existsSync(dbPath)) {
+    // Fallback for local development
+    dbPath = path.join(process.cwd(), "htp-data", "dev.db");
+  }
+
     fs.writeFileSync(dbPath, buffer);
 
     return new NextResponse(`

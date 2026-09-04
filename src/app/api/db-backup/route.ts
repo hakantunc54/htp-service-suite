@@ -4,7 +4,13 @@ import fs from "fs";
 import path from "path";
 
 export async function GET() {
-  const dbPath = path.join(process.cwd(), "htp-data", "dev.db");
+  
+  let dbPath = "/data/dev.db";
+  if (!fs.existsSync(dbPath)) {
+    // Fallback for local development
+    dbPath = path.join(process.cwd(), "htp-data", "dev.db");
+  }
+
   if (!fs.existsSync(dbPath)) return new NextResponse("Database file not found", { status: 404 });
   
   const fileBuffer = fs.readFileSync(dbPath);

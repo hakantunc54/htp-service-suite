@@ -591,23 +591,25 @@ function OrdersContent() {
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         order.status === "Erfolgreich abgeschlossen" ? "bg-green-100 text-green-800" :
-                        order.status === "Storniert" || order.status === "Abbruch" ? "bg-red-100 text-red-800" :
+                        order.status === "Storniert" || order.status === "Storno HTP" || order.status === "Abbruch" ? "bg-red-100 text-red-800" :
                         "bg-blue-100 text-blue-800"
                       }`}>
                         {order.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {order.isBilled ? (
-                        <button onClick={() => openBilling(order)} className="text-green-600 font-bold flex items-center gap-1 hover:text-green-700 hover:bg-green-50 p-1.5 rounded transition-colors cursor-pointer" title="Abrechnung bearbeiten"><CheckCircle2 className="w-4 h-4" /> BERECHNET</button>
-                      ) : (
-                        <button
-                          onClick={() => openBilling(order)}
-                          className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold py-1.5 px-3 rounded-lg border border-amber-200 transition-colors shadow-sm"
-                        >
-                          Abrechnen
-                        </button>
-                      )}
+                      {order.status === "Storno HTP" || order.status === "Storniert" ? (
+                          <span className="text-red-500 font-bold flex items-center gap-1 text-sm bg-red-50 px-2 py-1 rounded-md w-fit"><X className="w-4 h-4" /> STORNO</span>
+                        ) : order.isBilled ? (
+                          <button onClick={() => openBilling(order)} className="text-green-600 font-bold flex items-center gap-1 hover:text-green-700 hover:bg-green-50 p-1.5 rounded transition-colors cursor-pointer" title="Abrechnung bearbeiten"><CheckCircle2 className="w-4 h-4" /> BERECHNET</button>
+                        ) : (
+                          <button
+                            onClick={() => openBilling(order)}
+                            className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold py-1.5 px-3 rounded-lg border border-amber-200 transition-colors shadow-sm"
+                          >
+                            Abrechnen
+                          </button>
+                        )}
                     </td>
                     <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">

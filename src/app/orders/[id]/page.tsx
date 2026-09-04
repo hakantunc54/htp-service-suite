@@ -4,7 +4,7 @@ import { Copy } from 'lucide-react';
 
 import { useEffect, useState } from "react";
 import { getOrderDetails, getSmsTemplates, addHistoryEntry, updateOrderStatus, cloneOrder, getAvailableServiceItems, updateOrderServices, updateOrderDetailsText } from "./actions";
-import { Phone, MessageSquare, ArrowLeft, Clock, Send, CheckCircle2, AlertTriangle, CheckSquare, Settings2 } from "lucide-react";
+import { X,  Phone, MessageSquare, ArrowLeft, Clock, Send, CheckCircle2, AlertTriangle, CheckSquare, Settings2  } from "lucide-react";
 import Link from "next/link";
 import { OrderStatus, CommunicationStatus } from "@/types";
 import { use } from "react";
@@ -281,9 +281,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   📞 Kunde nicht erreicht
                 </button>
                 
-              </div>
-            </>
-          )}
+              <button onClick={() => handleQuickAction("Storno HTP")} className="text-left px-4 py-2 text-sm bg-red-50 text-red-700 hover:bg-red-100 rounded-lg border border-red-200 font-medium mt-4 flex items-center gap-2">
+                    <X className="w-4 h-4" /> Als "Storno HTP" markieren
+                  </button>
+                </div>
+              </>
+            )}
 
           {/* Der Klon-Button für BDEs ist immer sichtbar, auch wenn abgerechnet wurde */}
           {(order.orderType || "").toLowerCase().includes("bde") && (

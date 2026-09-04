@@ -53,3 +53,31 @@ export async function updatePassword(userId: string, newPassword: string) {
     return { success: false, error: String(error) };
   }
 }
+
+
+export async function wipeDatabase() {
+  await prisma.historyEntry.deleteMany({});
+  await prisma.orderServiceItem.deleteMany({});
+  await prisma.order.deleteMany({});
+  await prisma.customer.deleteMany({});
+  return { success: true };
+}
+
+export async function restoreDatabase(formData: FormData) {
+  const file = formData.get("db_file") as File;
+  if (!file) return { success: false, error: "Keine Datei gefunden." };
+  
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  
+  const fs = require('fs');
+  const path = require('path');
+  
+  let dbPath = "/data/dev.db";
+  if (!fs.existsSync(dbPath)) {
+    dbPath = path.join(process.cwd(), "htp-data", "dev.db");
+  }
+  
+  fs.writeFileSync(dbPath, buffer);
+  return { success: true };
+}

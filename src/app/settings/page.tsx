@@ -96,6 +96,13 @@ export default function SettingsPage() {
         >
           <MessageSquare className="w-5 h-5" /> SMS Vorlagen
         </button>
+        
+        <button 
+          onClick={() => setActiveTab("database")}
+          className={"flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors " + (activeTab === "database" ? "bg-slate-800 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50")}
+        >
+          <Database className="w-5 h-5" /> Datenbank
+        </button>
         <button 
           onClick={() => setActiveTab("users")}
           className={"flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors " + (activeTab === "users" ? "bg-slate-800 text-white shadow-lg" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50")}

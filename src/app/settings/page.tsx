@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSettingsData, updateServiceItemPrice, updateSmsTemplate, updatePassword } from "./actions";
-import { Settings, Users, Calculator, MessageSquare, Save, Plus, Edit2 } from "lucide-react";
+import { Settings, Users, Calculator, MessageSquare, Save, Plus, Edit2, Database } from "lucide-react";
 import { toast } from "sonner";
 
 type SettingsData = Awaited<ReturnType<typeof getSettingsData>>;

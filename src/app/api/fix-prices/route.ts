@@ -22,7 +22,7 @@ export async function GET() {
       const expectedTotal = item.quantity * (item.serviceItem.defaultPrice || 0);
       
       // If the currently saved priceApplied equals the single unit price (defaultPrice) instead of the multiplied total, it's a bug!
-      if (item.priceApplied !== expectedTotal && item.priceApplied === item.serviceItem.defaultPrice && item.quantity > 1) {
+      if (item.priceApplied !== expectedTotal) {
         log += `Fixed ${item.order.customer?.customerName || 'Unknown'} (${item.serviceItem.name}): qty ${item.quantity}, old price ${item.priceApplied} EUR -> new price ${expectedTotal} EUR\n`;
         
         await prisma.orderServiceItem.update({
@@ -44,6 +44,24 @@ export async function GET() {
     }
   }
   
+  
+  // Pass 2: Verify and fix orderValue for all orders
+  const allOrders = await prisma.order.findMany({
+    include: { services: true, customer: true }
+  });
+  
+  for (const order of allOrders) {
+    const calculatedTotal = order.services.reduce((sum, s) => sum + (s.priceApplied || 0), 0);
+    if (order.orderValue !== calculatedTotal) {
+      log += `Fixed Order Total for ${order.customer?.customerName || 'Unknown'}: old total ${order.orderValue} EUR -> new total ${calculatedTotal} EUR\n`;
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { orderValue: calculatedTotal }
+      });
+      fixedCount++;
+    }
+  }
+
   if (fixedCount === 0) {
     return new NextResponse("Everything is already perfect! No corruptions found.", { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }

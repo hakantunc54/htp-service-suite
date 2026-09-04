@@ -118,7 +118,7 @@ export default async function Home() {
   
   const priceFttbLt12 = serviceItems.find(i => i.name.includes("<12"))?.defaultPrice || 85;
   const priceFttbGt12 = serviceItems.find(i => i.name.includes(">12"))?.defaultPrice || 55;
-  const priceBde = serviceItems.find(i => i.name.includes("BdE") && i.name.includes("Anfahrt"))?.defaultPrice || 38;
+  const priceBde = serviceItems.find(i => i.name.toLowerCase().includes("bde") && i.name.toLowerCase().includes("anfahrt"))?.defaultPrice || 60;
 
   Object.values(anfahrtGroups.FTTB).forEach(group => {
     if (group.count > 0) {

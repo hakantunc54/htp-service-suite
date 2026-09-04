@@ -523,14 +523,14 @@ function OrdersContent() {
                 value={dateFilter}
                 onChange={e => setDateFilter(e.target.value)}
               />
-              {dateFilter && (
-                <button 
-                  onClick={() => setDateFilter("")}
-                  className="text-xs text-red-500 hover:underline whitespace-nowrap"
-                >
-                  Filter löschen
-                </button>
-              )}
+              {(dateFilter || search) && (
+                  <button 
+                    onClick={() => { setDateFilter(""); setSearch(""); }}
+                    className="text-xs text-red-500 hover:underline whitespace-nowrap bg-red-50 px-2 py-1 rounded-md ml-2 font-medium"
+                  >
+                    Filter & Suche löschen
+                  </button>
+                )}
             </div>
         </div>
 

@@ -44,7 +44,7 @@ function OrdersContent() {
       sessionStorage.setItem("ordersSortDir", sortDirection);
       sessionStorage.setItem("ordersStatusFilter", statusFilter);
     }
-  }, [search, dateFilter, sortColumn, sortDirection]);
+  }, [search, dateFilter, sortColumn, sortDirection, statusFilter]);
   
   const handleSort = (col: string) => {
     if (sortColumn === col) {
@@ -678,4 +678,5 @@ export default function OrdersPage() {
     </Suspense>
   );
 }
+
 

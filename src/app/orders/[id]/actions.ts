@@ -51,16 +51,34 @@ export async function updateOrderServices(orderId: string, servicesToSave: { ser
       });
     }
 
+    
     // Update order value
+    const existingOrder = await tx.order.findUnique({ where: { id: orderId } });
+    
+    let updateData: any = {
+      orderValue: newOrderValue,
+      ...(newRemark !== undefined && { technicianRemark: newRemark }),
+      ...(newBdeStatus !== undefined && { bdeStatus: newBdeStatus }),
+      ...(newMaterialDetails !== undefined && { materialDetails: newMaterialDetails })
+    };
+
+    if (existingOrder && existingOrder.isBilled) {
+      const serviceItemIds = servicesToSave.map(s => s.serviceItemId);
+      const billedServiceItems = await tx.serviceItem.findMany({
+        where: { id: { in: serviceItemIds } }
+      });
+      const hasAbbruch = billedServiceItems.some(si => 
+        si.name.toLowerCase().includes("abbruch") || si.name.toLowerCase().includes("kvhdf")
+      );
+      const finalStatus = (hasAbbruch || newBdeStatus === "Abbruch") ? "Abbruch" : "Erfolgreich abgeschlossen";
+      updateData.status = finalStatus;
+    }
+
     await tx.order.update({
       where: { id: orderId },
-      data: { 
-        orderValue: newOrderValue,
-        ...(newRemark !== undefined && { technicianRemark: newRemark }),
-        ...(newBdeStatus !== undefined && { bdeStatus: newBdeStatus }),
-        ...(newMaterialDetails !== undefined && { materialDetails: newMaterialDetails })
-      }
+      data: updateData
     });
+
     
     // Add history entry
     await tx.historyEntry.create({

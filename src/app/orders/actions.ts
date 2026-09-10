@@ -59,7 +59,7 @@ export async function saveBilling(
   const hasAbbruch = billedServiceItems.some(si => 
     si.name.toLowerCase().includes("abbruch") || si.name.toLowerCase().includes("kvhdf")
   );
-  const finalStatus = hasAbbruch ? "Abbruch" : "Erfolgreich abgeschlossen";
+  const finalStatus = (hasAbbruch || bdeStatus === "Abbruch") ? "Abbruch" : "Erfolgreich abgeschlossen";
 
   // Update order totals
   await prisma.order.update({

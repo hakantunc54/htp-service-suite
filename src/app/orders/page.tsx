@@ -434,10 +434,10 @@ function OrdersContent() {
                     <option value="Auto 1">Auto 1</option>
                     <option value="Auto 2">Auto 2</option>
                     <option value="Auto 3">Auto 3</option>
-                    <option value="T 1">T 1 (BDE)</option>
-                    <option value="T 2">T 2 (BDE)</option>
-                    <option value="T 3">T 3 (BDE)</option>
-                    <option value="T 4">T 4 (BDE)</option>
+                    <option value="T1">T1 (BDE)</option>
+                    <option value="T2">T2 (BDE)</option>
+                    <option value="T3">T3 (BDE)</option>
+                    <option value="T4">T4 (BDE)</option>
                   </select>
                   
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">WE-Lage</label>

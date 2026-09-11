@@ -94,9 +94,12 @@ export async function saveTerminNote(orderId: string, note: string) {
   });
   
   // Update comm status to reflect we talked but no appointment
+  // IMPORTANT: Keep status as "Termin abstimmen" so the order stays in Terminabsprachen
+  // and does NOT appear in Disposition (which excludes "Termin abstimmen")
   await prisma.order.update({
     where: { id: orderId },
     data: {
+      status: "Termin abstimmen",
       communicationStatus: "Kunde erreicht (Klärung nötig)"
     }
   });

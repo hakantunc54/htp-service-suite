@@ -81,6 +81,10 @@ model Order {
   history         HistoryEntry[]
   tasks           Task[]
   
+  // Objektzuordnung
+  buildingId      String?
+  building        Building? @relation(fields: [buildingId], references: [id])
+  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -177,3 +181,134 @@ model Settings {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// ─── Objektbezogene Historie: Enums ───
+
+enum BuildingStatus {
+  GREEN
+  YELLOW
+  RED
+}
+
+enum BuildingTechnology {
+  FTTB
+  FTTH
+  COPPER
+  MIXED
+}
+
+enum BuildingPhotoCategory {
+  DPU
+  DSLAM
+  GFUEP
+  APL
+  LSA
+  TECH_ROOM
+  LABEL
+  CABINET
+  OTHER
+}
+
+// ─── Objekt (Gebäude) ───
+
+model Building {
+  id                  String   @id @default(uuid())
+  
+  // Eindeutige Objektnummer (wird manuell vergeben)
+  objectNumber        Int      @unique
+  
+  // Adresse (getrennte Felder + normalisierter Schlüssel)
+  street              String
+  houseNumber         String
+  zipCode             String
+  city                String
+  normalizedAddress   String   @unique
+  
+  // Objektstatus (Ampel)
+  objectStatus        BuildingStatus @default(GREEN)
+  objectStatusNote    String?
+  
+  // Allgemeine Objektinformationen
+  owner               String?
+  propertyManagement  String?
+  caretaker           String?
+  caretakerPhone      String?
+  contactPerson       String?
+  contactPhone        String?
+  primaryContact      String?
+  primaryContactPhone String?
+  primaryContactRole  String?
+  
+  // DPU-Informationen
+  dpuLocation         String?
+  dpuSiteCode         String?
+  dpuIpAddress        String?
+  dpuManufacturer     String?
+  dpuSerialNumber     String?
+  dpuCount            Int?
+  
+  // Weitere technische Infrastruktur
+  dslamLocation       String?
+  fiberHandoverPoint  String?
+  aplLocation         String?
+  lsaLocation         String?
+  cablingNotes        String?
+  techRoomAccess      String?
+  keyInfo             String?
+  
+  // Gebäudedaten
+  unitCount           Int?
+  technology          BuildingTechnology?
+  
+  // Verwaltung
+  isFavorite          Boolean  @default(false)
+  lastVisitAt         DateTime?
+  
+  // Freitext-Notizen
+  notes               String?
+  
+  // Relationen
+  entries             BuildingEntry[]
+  photos              BuildingPhoto[]
+  orders              Order[]
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ─── Objekt-Historieneintrag ───
+// PHASE-2-HINWEIS: Langfristig kann Building → Apartment → BuildingEntry sinnvoll werden.
+
+model BuildingEntry {
+  id                String   @id @default(uuid())
+  buildingId        String
+  building          Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  
+  orderId           String?
+  customerName      String?
+  orderType         String?
+  
+  apartmentLocation String?
+  apartmentCode     String?
+  
+  remark            String
+  isAutomatic       Boolean @default(false)
+  
+  createdAt         DateTime @default(now())
+}
+
+// ─── Objekt-Foto (Metadaten) ───
+
+model BuildingPhoto {
+  id          String   @id @default(uuid())
+  buildingId  String
+  building    Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  
+  filename    String
+  caption     String?
+  category    BuildingPhotoCategory?
+  fileSize    Int?
+  
+  createdAt   DateTime @default(now())
+}
+

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, SessionProvider, useSession } from "next-auth/react";
-import { LayoutDashboard, Inbox, Calendar, Users, Calculator, Settings, Menu, Search, X, Bell, UserCircle } from "lucide-react";
+import { LayoutDashboard, Inbox, Calendar, Users, Calculator, Settings, Menu, Search, X, Bell, UserCircle, Building2 } from "lucide-react";
 import { Toaster } from "sonner";
 
 
@@ -15,6 +15,7 @@ const navItems = [
   { name: "Terminabsprachen", href: "/terminabsprachen", icon: Calendar, highlight: true },
   { name: "Disposition", href: "/planning", icon: Calendar },
   { name: "Kunden & Aufträge", href: "/orders", icon: Users },
+  { name: "Objekte", href: "/buildings", icon: Building2 },
   { name: "Abrechnung", href: "/billing", icon: Calculator },
 ];
 

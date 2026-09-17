@@ -74,6 +74,8 @@ function OrdersContent() {
   const [bdeStatus, setBdeStatus] = useState("BDE erledigt - neuer BT erforderlich");
   const [vehicle, setVehicle] = useState("");
   const [materialDetails, setMaterialDetails] = useState("Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
+  const [buildingRemarkEnabled, setBuildingRemarkEnabled] = useState(false);
+  const [buildingRemark, setBuildingRemark] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -293,7 +295,7 @@ function OrdersContent() {
     const totalAmount = calculateTotal();
     
     try {
-      await saveBilling(billingOrder.id, itemsToSave, totalAmount, apartmentLocation, technicianRemark, isBDE ? bdeStatus : undefined, isBDE ? materialDetails : undefined, vehicle);
+      await saveBilling(billingOrder.id, itemsToSave, totalAmount, apartmentLocation, technicianRemark, isBDE ? bdeStatus : undefined, isBDE ? materialDetails : undefined, vehicle, buildingRemarkEnabled ? buildingRemark : undefined);
       toast.success("Auftrag erfolgreich abgerechnet!");
       setBillingOrder(null);
       fetchData();
@@ -490,6 +492,20 @@ function OrdersContent() {
                 <span className="text-lg font-medium text-slate-600">Gesamtsumme:</span>
                 <span className="text-3xl font-black text-blue-600">{calculateTotal().toFixed(2)} €</span>
               </div>
+              {/* ─── Objektvermerk ─── */}
+              <div className="border border-blue-200 rounded-xl p-4 bg-blue-50/50 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={buildingRemarkEnabled} onChange={e => setBuildingRemarkEnabled(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded" />
+                  <span className="text-sm font-medium text-blue-800">🏢 Vermerk zum Objekt erstellen</span>
+                </label>
+                {buildingRemarkEnabled && (
+                  <textarea value={buildingRemark} onChange={e => setBuildingRemark(e.target.value)}
+                    placeholder="z.B. DPU im Keller links installiert. Schlüssel beim Hausmeister."
+                    rows={3} className="w-full mt-3 px-3 py-2 border border-blue-300 rounded-lg text-sm" />
+                )}
+              </div>
+
               <button 
                 onClick={handleSaveBilling}
                 className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"

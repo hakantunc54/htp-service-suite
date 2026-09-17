@@ -2,6 +2,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { addAutoBuildingEntry, addBuildingEntry } from '@/app/buildings/actions';
 
 const prisma = new PrismaClient();
 
@@ -31,7 +32,8 @@ export async function saveBilling(
   technicianRemark: string = "",
   bdeStatus?: string,
   materialDetails?: string,
-  vehicle?: string
+  vehicle?: string,
+  buildingRemark?: string
 ) {
   // Loesche alte Positionen falls vorhanden
   await prisma.orderServiceItem.deleteMany({
@@ -85,8 +87,32 @@ export async function saveBilling(
     }
   });
 
+  // ─── Objektbezogene Historie: Automatischer Eintrag ───
+  try {
+    const result = await addAutoBuildingEntry(orderId);
+    
+    // Wenn zusätzlich ein manueller Vermerk erstellt werden soll
+    if (buildingRemark && buildingRemark.trim() && result?.building) {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { customer: true }
+      });
+      await addBuildingEntry(result.building.id, {
+        customerName: order?.customer.customerName,
+        orderType: order?.orderType || undefined,
+        apartmentLocation: apartmentLocation || undefined,
+        remark: buildingRemark.trim(),
+        orderId,
+      });
+    }
+  } catch (e) {
+    // Fehler bei der Objektzuordnung sollen die Abrechnung nicht blockieren
+    console.error("Objektzuordnung fehlgeschlagen:", e);
+  }
+
   revalidatePath('/orders');
   revalidatePath('/billing');
+  revalidatePath('/buildings');
   return { success: true };
 }
 

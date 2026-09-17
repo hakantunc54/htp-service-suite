@@ -10,6 +10,7 @@ import { OrderStatus, CommunicationStatus } from "@/types";
 import { use } from "react";
 import { toast } from "sonner";
 import { EditServicesModal } from "@/components/EditServicesModal";
+import BuildingBanner from "@/components/BuildingBanner";
 
 type OrderDetail = NonNullable<Awaited<ReturnType<typeof getOrderDetails>>>;
 type SmsTemplate = Awaited<ReturnType<typeof getSmsTemplates>>[0];
@@ -161,6 +162,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   </button>
 </span>
           </div>
+
+          {/* Objektbezogene Historie: Banner */}
+          <BuildingBanner address={order.customer.address} />
 
           <div className="bg-slate-50 p-4 rounded-xl mb-6 flex justify-between items-start">
             <div>

@@ -6,13 +6,22 @@ const prisma = new PrismaClient();
 
 /**
  * Einmaliger Migrations-Endpunkt:
- * Erstellt aus allen bereits abgerechneten Aufträgen Objekte + Historieneinträge.
+ * Erstellt aus bereits abgerechneten Aufträgen Objekte + Historieneinträge.
  * 
  * Aufruf: GET /api/backfill-buildings
+ * Optional: ?limit=50 (Standard: 50 pro Aufruf, mehrfach aufrufen bis "remaining: 0")
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Alle abgerechneten Aufträge laden (die noch kein Building haben)
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get("limit") || "50");
+
+    // Zähle wie viele noch zu verarbeiten sind
+    const totalRemaining = await prisma.order.count({
+      where: { isBilled: true, buildingId: null },
+    });
+
+    // Lade nur ein Batch
     const orders = await prisma.order.findMany({
       where: {
         isBilled: true,
@@ -22,6 +31,7 @@ export async function GET() {
         customer: true,
       },
       orderBy: { createdAt: "asc" },
+      take: limit,
     });
 
     let created = 0;
@@ -105,12 +115,17 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       summary: {
-        totalOrders: orders.length,
+        totalRemaining: totalRemaining,
+        processedInThisBatch: orders.length,
+        remaining: totalRemaining - entries - skipped,
         buildingsCreated: created,
         buildingsReused: reused,
         entriesCreated: entries,
         skipped,
       },
+      hint: totalRemaining - entries - skipped > 0 
+        ? "Noch Aufträge übrig – bitte Seite nochmal aufrufen."
+        : "Fertig! Alle Aufträge wurden verarbeitet.",
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error: any) {

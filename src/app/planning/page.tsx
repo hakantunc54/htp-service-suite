@@ -137,6 +137,12 @@ export default function PlanningPage() {
       if (hist && hist.length > 0) {
         notiz += ` | NOTIZ: ${hist[0].content}`;
       }
+      
+      // Vorherige Bemerkungen an der gleichen Adresse (Abbruchgründe etc.)
+      const prevRemarks = (o as any).previousRemarks;
+      if (prevRemarks && prevRemarks.length > 0) {
+        notiz += ` | VORHERIGER EINSATZ: ${prevRemarks.join(' // ')}`;
+      }
 
       let fruehestens = "08:00";
       let spaetestens = "17:00";

@@ -1,7 +1,7 @@
 "use server";
 
 import { PrismaClient } from '@prisma/client';
-import { Vehicle } from '@/types';
+import { Vehicle, isKnownOrderType } from '@/types';
 import { revalidatePath } from 'next/cache';
 
 const prisma = new PrismaClient();
@@ -74,6 +74,31 @@ export async function getOrdersForPlanning() {
   }));
 
   return ordersWithPrevRemarks;
+}
+
+export async function updateOrderType(orderId: string, orderType: string) {
+  if (!isKnownOrderType(orderType)) {
+    return { success: false, error: "Ungültiger Auftragstyp" };
+  }
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { orderType }
+    });
+    await prisma.historyEntry.create({
+      data: {
+        orderId,
+        type: "SYSTEM",
+        content: `Auftragstyp manuell in der Disposition gesetzt: ${orderType}`
+      }
+    });
+    revalidatePath('/planning');
+    revalidatePath('/orders');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update order type:", error);
+    return { success: false, error: "Speichern fehlgeschlagen" };
+  }
 }
 
 export async function assignVehicleToOrder(orderId: string, vehicle: string | null) {

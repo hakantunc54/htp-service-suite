@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { parseHtpEmail, ParsedOrder } from "@/lib/parser";
@@ -6,6 +6,7 @@ import { saveImportedOrders, checkImportWarnings, saveHistoricalExcelData } from
 import { Upload, Mail, CheckCircle2, AlertTriangle, Info, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import * as xlsx from "xlsx";
+import { ORDER_TYPES, isKnownOrderType } from "@/types";
 
 export default function ImportPage() {
   const [activeTab, setActiveTab] = useState<"email" | "excel">("email");
@@ -211,6 +212,67 @@ export default function ImportPage() {
 
           {parsed.length > 0 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+              {/* ─── Vorschau der erkannten Aufträge ─── */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-800">Vorschau: {parsed.length} erkannte Aufträge</h3>
+                  {parsed.some(p => !isKnownOrderType(p.orderType)) && (
+                    <span className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {parsed.filter(p => !isKnownOrderType(p.orderType)).length} × Typ fehlt – bitte auswählen
+                    </span>
+                  )}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50/50 border-b border-gray-100 text-left text-gray-600">
+                        <th className="px-4 py-2 font-semibold">Kunde</th>
+                        <th className="px-4 py-2 font-semibold">Adresse</th>
+                        <th className="px-4 py-2 font-semibold">Zeitfenster</th>
+                        <th className="px-4 py-2 font-semibold">Auftragstyp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsed.map((p, i) => {
+                        const missing = !isKnownOrderType(p.orderType);
+                        return (
+                          <tr key={i} className={`border-b border-gray-100 align-top ${missing ? "bg-orange-50/40" : ""}`}>
+                            <td className="px-4 py-2">
+                              <div className="font-medium text-gray-900">{p.customerName}</div>
+                              <div className="text-xs text-gray-400">{p.customerNumber || "–"}</div>
+                              {warnings[i]?.map((w, wi) => (
+                                <div key={wi} className="mt-1 text-xs text-amber-700 flex items-start gap-1">
+                                  <Info className="w-3 h-3 mt-0.5 shrink-0" /> {w}
+                                </div>
+                              ))}
+                            </td>
+                            <td className="px-4 py-2 text-gray-600">{p.address || "–"}</td>
+                            <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{p.htpPlanfenster || "–"}</td>
+                            <td className="px-4 py-2">
+                              <select
+                                value={missing ? "" : p.orderType}
+                                onChange={e => setParsed(prev => prev.map((x, xi) => xi === i ? { ...x, orderType: e.target.value } : x))}
+                                className={`text-sm rounded-lg px-2 py-1.5 border outline-none ${
+                                  missing
+                                    ? "border-orange-400 bg-orange-50 text-orange-800 font-semibold"
+                                    : "border-gray-300 bg-white text-gray-800"
+                                }`}
+                              >
+                                <option value="" disabled>⚠ Typ fehlt – auswählen</option>
+                                {ORDER_TYPES.map(t => (
+                                  <option key={t} value={t}>{t}</option>
+                                ))}
+                              </select>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-sm font-bold text-gray-800 mb-2">Import-Datum (Optional)</h3>
                 <p className="text-sm text-gray-500 mb-4">

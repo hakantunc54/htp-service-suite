@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getOrdersForPlanning, assignVehicleToOrder, deleteOrder } from "./actions";
-import { Vehicle } from "@/types";
+import { getOrdersForPlanning, assignVehicleToOrder, deleteOrder, updateOrderType } from "./actions";
+import { Vehicle, ORDER_TYPES, isKnownOrderType } from "@/types";
 import { Calendar, Download, Map, CarFront, Trash2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +39,18 @@ export default function PlanningPage() {
     const result = await assignVehicleToOrder(orderId, vehicle);
     if (result.success) {
       toast.success(vehicle ? `Dem ${vehicle} zugewiesen` : "Zuweisung aufgehoben");
+    }
+  };
+
+  // Auftragstyp nachtragen, falls der Smart-Import ihn nicht erkannt hat
+  const handleTypeChange = async (orderId: string, orderType: string) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, orderType } : o));
+    const result = await updateOrderType(orderId, orderType);
+    if (result.success) {
+      toast.success(`Auftragstyp gesetzt: ${orderType}`);
+    } else {
+      toast.error(result.error || "Fehler beim Speichern des Auftragstyps.");
+      fetchData();
     }
   };
 
@@ -216,6 +228,30 @@ export default function PlanningPage() {
 
   const vehicles = [Vehicle.AUTO_1, Vehicle.AUTO_2, Vehicle.AUTO_3, 'T1', 'T2', 'T3', 'T4'];
 
+  // Typ-Badge: bekannter Typ = normales Badge, sonst orangefarbenes Dropdown zum Nachtragen
+  const renderTypeBadge = (order: OrderData) => {
+    if (isKnownOrderType(order.orderType)) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800">
+          {order.orderType}
+        </span>
+      );
+    }
+    return (
+      <select
+        value=""
+        onChange={(e) => handleTypeChange(order.id, e.target.value)}
+        title={order.orderType ? `Nicht zugeordnet: "${order.orderType}"` : "Kein Auftragstyp erkannt"}
+        className="text-xs font-semibold rounded px-1.5 py-0.5 border border-orange-400 bg-orange-50 text-orange-800 outline-none max-w-[230px] cursor-pointer"
+      >
+        <option value="" disabled>⚠ Typ fehlt – auswählen</option>
+        {ORDER_TYPES.map(t => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
+    );
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto h-full flex flex-col relative">
       
@@ -281,9 +317,7 @@ export default function PlanningPage() {
                 
                 {/* Header: Typ & Delete Button */}
                 <div className="flex justify-between items-start mb-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800">
-                    {order.orderType || "Unbekannter Typ"}
-                  </span>
+                  {renderTypeBadge(order)}
                   <button 
                     onClick={() => setOrderToDelete(order.id)}
                     className="text-gray-400 hover:text-red-500 transition-colors p-1"
@@ -348,9 +382,7 @@ export default function PlanningPage() {
                   <div key={order.id} className="border border-blue-100 p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow group relative">
                     
                     <div className="flex justify-between items-start mb-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800">
-                        {order.orderType || "Unbekannter Typ"}
-                      </span>
+                      {renderTypeBadge(order)}
                       <button 
                         onClick={() => setOrderToDelete(order.id)}
                         className="text-gray-400 hover:text-red-500 transition-colors p-1"

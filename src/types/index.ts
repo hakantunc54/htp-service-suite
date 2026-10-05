@@ -6,6 +6,14 @@ export enum OrderType {
   BDE = "BdE (Bau der Endleitung)"
 }
 
+/** Alle gültigen Auftragstypen (für Dropdowns) */
+export const ORDER_TYPES: string[] = Object.values(OrderType);
+
+/** true, wenn der Auftragstyp einer der 5 bekannten Typen ist */
+export function isKnownOrderType(type?: string | null): boolean {
+  return !!type && ORDER_TYPES.includes(type);
+}
+
 export enum OrderStatus {
   NEU = "Neu",
   TERMIN_ABSTIMMEN = "Termin abstimmen",

@@ -3,14 +3,21 @@
 import { PrismaClient } from '@prisma/client';
 import { Vehicle, isKnownOrderType } from '@/types';
 import { revalidatePath } from 'next/cache';
+import { TERMINABSPRACHE_STATUSES, BDE_ORDER_TYPE_FILTER, DISPOSITION_EXCLUDED_STATUSES } from '@/lib/orderFilters';
 
 const prisma = new PrismaClient();
 
 export async function getOrdersForPlanning() {
   const orders = await prisma.order.findMany({
     where: {
-      status: {
-        notIn: ["Erfolgreich abgeschlossen", "Storniert", "Storno HTP", "Abbruch", "Abgerechnet", "Archiviert", "Termin abstimmen"]
+      status: { notIn: DISPOSITION_EXCLUDED_STATUSES },
+      // BdE-Aufträge, die noch in der Terminabsprache sind (z.B. "Kunde nicht erreicht"),
+      // gehören NICHT in die Disposition – erst nach "Termin vereinbart"
+      NOT: {
+        AND: [
+          { OR: BDE_ORDER_TYPE_FILTER },
+          { status: { in: TERMINABSPRACHE_STATUSES } }
+        ]
       }
     },
     include: {

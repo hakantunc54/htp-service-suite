@@ -3,33 +3,15 @@
 import { PrismaClient } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { OrderStatus, CommunicationStatus } from '@/types';
+import { TERMINABSPRACHE_STATUSES, BDE_ORDER_TYPE_FILTER } from '@/lib/orderFilters';
 
 const prisma = new PrismaClient();
 
 export async function getTerminabsprachen() {
   return await prisma.order.findMany({
     where: {
-      OR: [
-        { orderType: { contains: "BdE" } },
-        { orderType: { contains: "BDE" } },
-        { orderType: { contains: "bde" } },
-        { orderType: { contains: "Endleitung" } },
-        { orderType: { contains: "endleitung" } }
-      ],
-      status: {
-        in: [
-          "Termin abstimmen", 
-          "Neu",
-          "Wartet auf HTP",
-          "Kunde angerufen", 
-          "Kunde erreicht", 
-          "Kunde nicht erreicht", 
-          "SMS Erstkontakt gesendet", 
-          "SMS Erinnerung gesendet", 
-          "Letzte Erinnerung gesendet", 
-          "Kunde hat zurückgerufen"
-        ]
-      }
+      OR: BDE_ORDER_TYPE_FILTER,
+      status: { in: TERMINABSPRACHE_STATUSES }
     },
     include: {
       customer: true

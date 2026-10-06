@@ -81,8 +81,14 @@ export default function PlanningPage() {
       ? orders.filter(o => o.vehicle === exportVehicle)
       : orders.filter(o => o.vehicle !== null && o.vehicle !== ""); 
 
+    // Aufträge ohne Termin-Datum NICHT exportieren – sonst landen sie an jedem beliebigen Tag in xRouten
+    const withoutDate = ordersToExport.filter(o => !o.kundenTerminStart);
+    if (withoutDate.length > 0) {
+      toast.warning(`${withoutDate.length} Auftrag/Aufträge ohne Termin-Datum NICHT exportiert: ${withoutDate.map(o => o.customer.customerName).join(", ")}`, { duration: 10000 });
+    }
+
     ordersToExport = ordersToExport.filter(o => {
-      if (!o.kundenTerminStart) return true; 
+      if (!o.kundenTerminStart) return false;
       
       const d = new Date(o.kundenTerminStart);
       const localYear = d.getFullYear();

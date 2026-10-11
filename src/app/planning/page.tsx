@@ -156,10 +156,18 @@ export default function PlanningPage() {
         notiz += ` | NOTIZ: ${hist[0].content}`;
       }
       
-      // Vorherige Bemerkungen an der gleichen Adresse (Abbruchgründe etc.)
-      const prevRemarks = (o as any).previousRemarks;
-      if (prevRemarks && prevRemarks.length > 0) {
-        notiz += ` | VORHERIGER EINSATZ: ${prevRemarks.join(' // ')}`;
+      // Hinweise zu Kunde/Objekt (Vorbesuche, Abbruchgründe, Zugang, Kontakt) für den Techniker
+      const sw = o.siteWarnings;
+      if (sw) {
+        if (sw.objectStatusNote || (sw.objectStatus && sw.objectStatus !== "GREEN")) {
+          notiz += ` | ⚠ OBJEKT: ${sw.objectStatusNote || (sw.objectStatus === "RED" ? "Kritisches Objekt" : "Aufmerksamkeit erforderlich")}`;
+        }
+        if (sw.access) notiz += ` | ZUGANG: ${sw.access}`;
+        if (sw.previous.length > 0) {
+          const label = sw.visitCount > 0 ? `${sw.visitCount + 1}. ANFAHRT – VORHER` : "OBJEKT BEKANNT – VORHER";
+          notiz += ` | ${label}: ${sw.previous.join(" // ")}`;
+        }
+        if (sw.contact || sw.contactPhone) notiz += ` | KONTAKT VOR ORT: ${[sw.contact, sw.contactPhone].filter(Boolean).join(" ")}`;
       }
 
       let fruehestens = "08:00";
@@ -234,6 +242,36 @@ export default function PlanningPage() {
 
   const vehicles = [Vehicle.AUTO_1, Vehicle.AUTO_2, Vehicle.AUTO_3, 'T1', 'T2', 'T3', 'T4'];
 
+  // Hinweisbox: Vorbesuche, Abbruchgründe, Objektstatus, Zugang, Kontakt
+  const renderSiteWarnings = (order: OrderData) => {
+    const sw = order.siteWarnings;
+    if (!sw?.hasWarnings) return null;
+    const critical = sw.objectStatus === "RED" || sw.previous.some(p => p.includes("ABBRUCH"));
+    return (
+      <div className={`mb-2 rounded border px-2 py-1.5 text-[11px] leading-snug space-y-0.5 ${critical ? "bg-red-50 border-red-200 text-red-800" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+        <div className="font-bold flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" />
+          {sw.visitCount > 0 ? `${sw.visitCount + 1}. Anfahrt beim Kunden` : "Objekt bekannt"}
+          {sw.objectNumber && <span className="font-normal opacity-70">· {sw.objectNumber}</span>}
+        </div>
+        {sw.objectStatusNote && <div><b>Objekt:</b> {sw.objectStatusNote}</div>}
+        {sw.access && <div><b>Zugang:</b> {sw.access}</div>}
+        {sw.previous.map((p, i) => <div key={i}>{p}</div>)}
+        {(sw.contact || sw.contactPhone) && (
+          <div>
+            <b>Kontakt:</b> {sw.contact}{" "}
+            {sw.contactPhone && <a href={`tel:${sw.contactPhone}`} className="underline font-semibold">{sw.contactPhone}</a>}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Aufträge mit Hinweisen für die Übersicht "Vorab klären" (nach Termin sortiert)
+  const ordersWithWarnings = orders
+    .filter(o => o.siteWarnings?.hasWarnings)
+    .sort((a, b) => (a.kundenTerminStart ? new Date(a.kundenTerminStart).getTime() : Infinity) - (b.kundenTerminStart ? new Date(b.kundenTerminStart).getTime() : Infinity));
+
   // Typ-Badge: bekannter Typ = normales Badge, sonst orangefarbenes Dropdown zum Nachtragen
   const renderTypeBadge = (order: OrderData) => {
     if (isKnownOrderType(order.orderType)) {
@@ -305,6 +343,34 @@ export default function PlanningPage() {
         </button>
       </div>
 
+      {ordersWithWarnings.length > 0 && (
+        <details open className="mb-6 bg-red-50/60 border border-red-200 rounded-xl p-4">
+          <summary className="font-semibold text-red-900 flex items-center gap-2 cursor-pointer select-none">
+            <AlertTriangle className="w-5 h-5" />
+            Vorab klären: {ordersWithWarnings.length} {ordersWithWarnings.length === 1 ? "Auftrag" : "Aufträge"} mit Hinweisen
+            <span className="text-xs font-normal text-red-700">(Wiederholungsanfahrt, Zugang, Objektstatus – ggf. Kunde/Hausmeister vorher anrufen)</span>
+          </summary>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 mt-3">
+            {ordersWithWarnings.map(o => {
+              const phone = o.customer.mobile || o.customer.phone;
+              return (
+                <div key={o.id} className="bg-white rounded-lg border border-red-100 p-3 text-sm shadow-sm">
+                  <div className="flex justify-between items-start gap-2">
+                    <a href={`/orders/${o.id}`} className="font-semibold text-blue-900 hover:underline">{o.customer.customerName}</a>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                      {o.kundenTerminStart ? new Date(o.kundenTerminStart).toLocaleDateString("de-DE") : "kein Termin"} · {o.vehicle || "Pool"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600 truncate">{o.customer.address}</div>
+                  {phone && <div className="text-xs mb-2">Kunde: <a href={`tel:${phone}`} className="text-blue-700 underline font-medium">{phone}</a></div>}
+                  {renderSiteWarnings(o)}
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      )}
+
       <div className="flex-1 flex overflow-x-auto gap-6 min-h-0 pb-4">
         
         {/* Pool: Unzugewiesen */}
@@ -336,6 +402,7 @@ export default function PlanningPage() {
                 {/* Kunde & Adresse */}
                 <div className="font-medium text-sm text-blue-900 mb-0.5">{order.customer.customerName}</div>
                 <div className="text-xs text-gray-600 mb-2 truncate">{order.customer.address}</div>
+                {renderSiteWarnings(order)}
                 
                 {/* Termin Badge (falls vorhanden) */}
                 {order.kundenTerminStart && (
@@ -400,6 +467,7 @@ export default function PlanningPage() {
 
                     <div className="font-medium text-sm text-blue-900 mb-0.5">{order.customer.customerName}</div>
                     <div className="text-xs text-gray-600 mb-2 truncate">{order.customer.address}</div>
+                {renderSiteWarnings(order)}
                     
                     {order.kundenTerminStart && (
                       <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 mb-3 w-max">

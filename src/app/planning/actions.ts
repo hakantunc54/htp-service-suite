@@ -4,8 +4,38 @@ import { PrismaClient } from '@prisma/client';
 import { Vehicle, isKnownOrderType } from '@/types';
 import { revalidatePath } from 'next/cache';
 import { TERMINABSPRACHE_STATUSES, BDE_ORDER_TYPE_FILTER, DISPOSITION_EXCLUDED_STATUSES } from '@/lib/orderFilters';
+import { normalizeAddress, formatObjectNumber } from '@/lib/normalizeAddress';
 
 const prisma = new PrismaClient();
+
+/** Hinweise zu Kunde/Objekt für Disposition und xRoute-Export */
+export type SiteWarnings = {
+  hasWarnings: boolean;
+  visitCount: number;              // Anzahl vorheriger Einsätze (Kunde oder gleiches Objekt)
+  objectNumber?: string;
+  objectStatus?: string;           // GREEN | YELLOW | RED
+  objectStatusNote?: string;
+  access?: string;                 // Technikraum-Zugang / Schlüssel
+  contact?: string;                // z.B. "Hausmeister Müller 0151 1234567"
+  contactPhone?: string;
+  previous: string[];              // "[16.09.2026] ABBRUCH - Kein Zutritt zur Technik"
+};
+
+/** Status, die als "dort waren wir schon" zählen */
+const DONE_STATUSES = ["Abbruch", "Erfolgreich abgeschlossen", "Abgerechnet", "Kunde nicht angetroffen", "Archiviert"];
+
+/** Entfernt den automatischen Import-Hinweis ("ACHTUNG: Kunde hatte bereits ...") aus Bemerkungen */
+function cleanRemark(text?: string | null): string {
+  if (!text) return "";
+  return text
+    .replace(/ACHTUNG: Kunde(?:\/Port)? (?:hatte|war) bereits[\s\S]*?Bitte alte Aktennotizen(?: und Material)? prüfen!/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatDate(d?: Date | null): string {
+  return d ? new Date(d).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" }) : "?";
+}
 
 export async function getOrdersForPlanning() {
   const orders = await prisma.order.findMany({
@@ -27,60 +57,97 @@ export async function getOrdersForPlanning() {
         orderBy: { createdAt: 'desc' },
         take: 1
       },
-      building: {
-        include: {
-          entries: {
-            orderBy: { createdAt: 'desc' },
-            take: 5
-          }
-        }
-      }
+      building: true
     },
     orderBy: {
       createdAt: 'desc'
     }
   });
 
-  // Für jeden Auftrag vorherige Bemerkungen an der gleichen Adresse ermitteln
-  const ordersWithPrevRemarks = await Promise.all(orders.map(async (order) => {
-    let previousRemarks: string[] = [];
-    
-    if (order.buildingId) {
-      // Vorherige abgerechnete Aufträge an der gleichen Adresse
-      const prevOrders = await prisma.order.findMany({
-        where: {
-          buildingId: order.buildingId,
-          id: { not: order.id },
-          isBilled: true,
-        },
-        select: {
-          status: true,
-          billingRemark: true,
-          technicianRemark: true,
-          orderType: true,
-          updatedAt: true,
-        },
-        orderBy: { updatedAt: 'desc' },
-        take: 3,
-      });
-      
-      for (const prev of prevOrders) {
-        const remarkParts: string[] = [];
-        if (prev.status === "Abbruch") remarkParts.push("ABBRUCH");
-        if (prev.technicianRemark) remarkParts.push(prev.technicianRemark);
-        else if (prev.billingRemark) remarkParts.push(prev.billingRemark);
-        
-        if (remarkParts.length > 0) {
-          const date = prev.updatedAt.toLocaleDateString('de-DE');
-          previousRemarks.push(`[${date}] ${remarkParts.join(' - ')}`);
-        }
+  return await Promise.all(orders.map(async (order) => {
+    // 1. Objekt ermitteln – neue Aufträge haben noch keine buildingId (wird erst bei Abrechnung gesetzt),
+    //    daher Fallback über die normalisierte Adresse
+    let building = order.building;
+    if (!building && order.customer.address) {
+      const norm = normalizeAddress(order.customer.address).normalized;
+      if (norm) {
+        building = await prisma.building.findUnique({ where: { normalizedAddress: norm } });
       }
     }
-    
-    return { ...order, previousRemarks };
-  }));
 
-  return ordersWithPrevRemarks;
+    // 2. Vorherige Einsätze: gleicher Kunde ODER gleiches Objekt
+    const prevOrders = await prisma.order.findMany({
+      where: {
+        id: { not: order.id },
+        OR: [
+          { customerId: order.customerId },
+          ...(building ? [{ buildingId: building.id }] : []),
+        ],
+        AND: [{ OR: [{ isBilled: true }, { status: { in: DONE_STATUSES } }] }],
+      },
+      select: {
+        status: true,
+        technicianRemark: true,
+        billingRemark: true,
+        kundenTerminStart: true,
+        billingDate: true,
+        updatedAt: true,
+        customerId: true,
+        customer: { select: { customerName: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+    });
+
+    const previous: string[] = [];
+    for (const prev of prevOrders.slice(0, 3)) {
+      const parts: string[] = [];
+      // Bei anderem Kunden im selben Objekt den Namen dazuschreiben
+      if (prev.customerId !== order.customerId) parts.push(`${prev.customer.customerName}:`);
+      if (prev.status === "Abbruch") parts.push("ABBRUCH -");
+      else if (prev.status === "Kunde nicht angetroffen") parts.push("NICHT ANGETROFFEN -");
+
+      let remark = cleanRemark(prev.technicianRemark) || cleanRemark(prev.billingRemark);
+      if (remark.length > 220) remark = remark.substring(0, 217) + "...";
+      if (!remark && prev.status !== "Abbruch") continue; // Erfolgreich ohne Bemerkung = kein Hinweis nötig
+      parts.push(remark || "(kein Grund eingetragen)");
+
+      const date = formatDate(prev.kundenTerminStart || prev.billingDate || prev.updatedAt);
+      previous.push(`[${date}] ${parts.join(" ")}`.replace(/ -$/, ""));
+    }
+
+    // 3. Objektinformationen
+    const objectStatus = building?.objectStatus;
+    const objectStatusNote = building?.objectStatusNote?.trim() || undefined;
+    const access = [building?.techRoomAccess, building?.keyInfo].filter(Boolean).join(" / ") || undefined;
+
+    let contact: string | undefined;
+    let contactPhone: string | undefined;
+    if (building?.primaryContact || building?.primaryContactPhone) {
+      contact = [building.primaryContactRole, building.primaryContact].filter(Boolean).join(" ");
+      contactPhone = building.primaryContactPhone || undefined;
+    } else if (building?.caretaker || building?.caretakerPhone) {
+      contact = `Hausmeister ${building.caretaker || ""}`.trim();
+      contactPhone = building.caretakerPhone || undefined;
+    } else if (building?.contactPerson || building?.contactPhone) {
+      contact = building.contactPerson || "Ansprechpartner";
+      contactPhone = building.contactPhone || undefined;
+    }
+
+    const siteWarnings: SiteWarnings = {
+      hasWarnings: previous.length > 0 || (!!objectStatus && objectStatus !== "GREEN") || !!objectStatusNote || !!access,
+      visitCount: prevOrders.filter(p => p.customerId === order.customerId).length,
+      objectNumber: building ? formatObjectNumber(building.objectNumber) : undefined,
+      objectStatus,
+      objectStatusNote,
+      access,
+      contact: contact || undefined,
+      contactPhone,
+      previous,
+    };
+
+    return { ...order, siteWarnings };
+  }));
 }
 
 export async function updateOrderType(orderId: string, orderType: string) {

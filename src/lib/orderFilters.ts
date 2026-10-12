@@ -41,4 +41,5 @@ export const DISPOSITION_EXCLUDED_STATUSES = [
   "Abgerechnet",
   "Archiviert",
   "Termin abstimmen",
+  "Gewährleistung",
 ];

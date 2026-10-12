@@ -71,7 +71,9 @@ export async function updateOrderServices(orderId: string, servicesToSave: { ser
         si.name.toLowerCase().includes("abbruch") || si.name.toLowerCase().includes("kvhdf")
       );
       const finalStatus = (hasAbbruch || newBdeStatus === "Abbruch") ? "Abbruch" : "Erfolgreich abgeschlossen";
-      updateData.status = finalStatus;
+      // Gewährleistung bleibt erhalten, solange keine bezahlten Positionen hinzugefügt werden
+      const keepWarranty = existingOrder.status === "Gewährleistung" && newOrderValue === 0;
+      updateData.status = keepWarranty ? "Gewährleistung" : finalStatus;
     }
 
     await tx.order.update({

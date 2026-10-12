@@ -24,6 +24,31 @@ export async function getServiceItems() {
   });
 }
 
+/**
+ * Datum des letzten Einsatzes beim gleichen Kunden (sonst im gleichen Objekt).
+ * Wird für die Vorbefüllung "GEWÄHRLEISTUNG zu Einsatz vom ..." genutzt.
+ */
+export async function getPreviousVisitDate(orderId: string): Promise<string | null> {
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { customerId: true, buildingId: true } });
+  if (!order) return null;
+
+  const prev = await prisma.order.findFirst({
+    where: {
+      id: { not: orderId },
+      OR: [
+        { customerId: order.customerId },
+        ...(order.buildingId ? [{ buildingId: order.buildingId }] : []),
+      ],
+      AND: [{ OR: [{ isBilled: true }, { status: { in: ["Abbruch", "Erfolgreich abgeschlossen", "Abgerechnet", "Gewährleistung"] } }] }],
+    },
+    orderBy: [{ kundenTerminStart: 'desc' }, { updatedAt: 'desc' }],
+    select: { kundenTerminStart: true, updatedAt: true },
+  });
+  if (!prev) return null;
+  const d = prev.kundenTerminStart || prev.updatedAt;
+  return d.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 export async function saveBilling(
   orderId: string, 
   items: { serviceItemId: string; quantity: number; amount: number }[],
@@ -33,8 +58,15 @@ export async function saveBilling(
   bdeStatus?: string,
   materialDetails?: string,
   vehicle?: string,
-  buildingRemark?: string
+  buildingRemark?: string,
+  isWarranty: boolean = false
 ) {
+  // Gewährleistung: keine Positionen, 0 € – Anfahrt wird im Export/Dashboard ebenfalls nicht gezählt
+  if (isWarranty) {
+    items = [];
+    totalAmount = 0;
+  }
+
   // Loesche alte Positionen falls vorhanden
   await prisma.orderServiceItem.deleteMany({
     where: { orderId }
@@ -61,7 +93,9 @@ export async function saveBilling(
   const hasAbbruch = billedServiceItems.some(si => 
     si.name.toLowerCase().includes("abbruch") || si.name.toLowerCase().includes("kvhdf")
   );
-  const finalStatus = (hasAbbruch || bdeStatus === "Abbruch") ? "Abbruch" : "Erfolgreich abgeschlossen";
+  const finalStatus = isWarranty
+    ? "Gewährleistung"
+    : (hasAbbruch || bdeStatus === "Abbruch") ? "Abbruch" : "Erfolgreich abgeschlossen";
 
   // Update order totals
   await prisma.order.update({
@@ -83,7 +117,9 @@ export async function saveBilling(
     data: {
       orderId,
       type: "SYSTEM",
-      content: `Abrechnung gespeichert. Summe: ${totalAmount.toFixed(2)} €`
+      content: isWarranty
+        ? `🛡 Als Gewährleistung erfasst – nicht berechnet (0,00 €).`
+        : `Abrechnung gespeichert. Summe: ${totalAmount.toFixed(2)} €`
     }
   });
 

@@ -178,6 +178,10 @@ export async function addAutoBuildingEntry(orderId: string) {
 
   // Automatischen Eintrag erstellen
   const statusText = order.status || "Abgeschlossen";
+  // Bei Gewährleistung den Grund mitschreiben, damit im Objekt sichtbar ist, was nachgebessert wurde
+  const remarkText = order.status === "Gewährleistung"
+    ? `🛡 ${(order.technicianRemark || "Gewährleistung").replace(/\s+/g, " ").trim().substring(0, 300)}`
+    : statusText;
   const entry = await prisma.buildingEntry.create({
     data: {
       buildingId: building.id,
@@ -186,7 +190,7 @@ export async function addAutoBuildingEntry(orderId: string) {
       orderType: order.orderType || "Unbekannt",
       apartmentLocation: order.apartmentLocation || null,
       apartmentCode: null, // Wird aus WE-Lage abgeleitet falls vorhanden
-      remark: `${statusText}`,
+      remark: remarkText,
       isAutomatic: true,
     }
   });

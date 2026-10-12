@@ -22,7 +22,7 @@ export type SiteWarnings = {
 };
 
 /** Status, die als "dort waren wir schon" zählen */
-const DONE_STATUSES = ["Abbruch", "Erfolgreich abgeschlossen", "Abgerechnet", "Kunde nicht angetroffen", "Archiviert"];
+const DONE_STATUSES = ["Abbruch", "Erfolgreich abgeschlossen", "Abgerechnet", "Kunde nicht angetroffen", "Archiviert", "Gewährleistung"];
 
 /** Entfernt den automatischen Import-Hinweis ("ACHTUNG: Kunde hatte bereits ...") aus Bemerkungen */
 function cleanRemark(text?: string | null): string {

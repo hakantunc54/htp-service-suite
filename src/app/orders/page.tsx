@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { getOrders, getServiceItems, saveBilling, deleteOrder } from "./actions";
+import { getOrders, getServiceItems, saveBilling, deleteOrder, getPreviousVisitDate } from "./actions";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Users, Search, ChevronRight, Calculator, FileCheck2, Filter, X, CheckCircle2, Trash2 , AlertTriangle} from "lucide-react";
@@ -75,6 +75,7 @@ function OrdersContent() {
   const [vehicle, setVehicle] = useState("");
   const [materialDetails, setMaterialDetails] = useState("Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
   const [buildingRemarkEnabled, setBuildingRemarkEnabled] = useState(false);
+  const [isWarranty, setIsWarranty] = useState(false);
   const [buildingRemark, setBuildingRemark] = useState("");
 
   useEffect(() => {
@@ -196,6 +197,7 @@ function OrdersContent() {
     
     setApartmentLocation(order.apartmentLocation || "");
     setTechnicianRemark(order.technicianRemark || "");
+    setIsWarranty(order.status === "Gewährleistung");
     setVehicle(order.vehicle || "");
     setBdeStatus(order.bdeStatus || "BDE erledigt - neuer BT erforderlich");
     setMaterialDetails(order.materialDetails || "Zeitaufwand: 1 Techniker 2,00 Std.\nMaterialaufwand: \n- 10m ISTY (15,00 EUR)\n- 5m Verlegematerial (7,50 EUR)\n- 1 x TAE Dose AP (15 EUR)");
@@ -250,6 +252,7 @@ function OrdersContent() {
   const relevantItems = getRelevantServiceItems();
 
   const isItemDisabled = (itemName: string) => {
+    if (isWarranty) return true; // Gewährleistung: alle Positionen gesperrt
     const fttbId = relevantItems.find(i => i.name === "FTTB")?.id;
     const abbruchId = relevantItems.find(i => i.name === "Abbruch")?.id;
     const hasFTTB = fttbId ? (quantities[fttbId] || 0) > 0 : false;
@@ -275,8 +278,28 @@ function OrdersContent() {
     return total;
   };
 
+  // Gewährleistung an/aus – Bemerkung mit Datum des Vorbesuchs vorbefüllen
+  const toggleWarranty = async (checked: boolean) => {
+    setIsWarranty(checked);
+    if (!checked || !billingOrder || technicianRemark.includes("GEWÄHRLEISTUNG")) return;
+    const prevDate = await getPreviousVisitDate(billingOrder.id);
+    // Automatischen Import-Hinweis ("ACHTUNG: Kunde hatte bereits ...") entfernen
+    const rest = technicianRemark
+      .replace(/ACHTUNG: Kunde(?:\/Port)? (?:hatte|war) bereits[\s\S]*?Bitte alte Aktennotizen(?: und Material)? prüfen!/g, "")
+      .trim();
+    setTechnicianRemark(`GEWÄHRLEISTUNG${prevDate ? ` zu Einsatz vom ${prevDate}` : ""} – ${rest}`);
+  };
+
   const handleSaveBilling = async () => {
     if (!billingOrder) return;
+
+    if (isWarranty) {
+      const reason = technicianRemark.replace(/^\s*GEWÄHRLEISTUNG[^–]*–?/, "").trim();
+      if (!reason) {
+        toast.error("Bitte den Grund der Gewährleistung in „Bemerkung / Mehraufwand“ eintragen.");
+        return;
+      }
+    }
     
     const itemsToSave = [];
     for (const item of relevantItems) {
@@ -295,8 +318,8 @@ function OrdersContent() {
     const totalAmount = calculateTotal();
     
     try {
-      await saveBilling(billingOrder.id, itemsToSave, totalAmount, apartmentLocation, technicianRemark, isBDE ? bdeStatus : undefined, isBDE ? materialDetails : undefined, vehicle, buildingRemarkEnabled ? buildingRemark : undefined);
-      toast.success("Auftrag erfolgreich abgerechnet!");
+      await saveBilling(billingOrder.id, itemsToSave, totalAmount, apartmentLocation, technicianRemark, isBDE ? bdeStatus : undefined, isBDE ? materialDetails : undefined, vehicle, buildingRemarkEnabled ? buildingRemark : undefined, isWarranty);
+      toast.success(isWarranty ? "Als Gewährleistung gespeichert (nicht berechnet)." : "Auftrag erfolgreich abgerechnet!");
       setBillingOrder(null);
       fetchData();
     } catch (e) {
@@ -492,6 +515,22 @@ function OrdersContent() {
                 <span className="text-lg font-medium text-slate-600">Gesamtsumme:</span>
                 <span className="text-3xl font-black text-blue-600">{calculateTotal().toFixed(2)} €</span>
               </div>
+              {/* ─── Gewährleistung ─── */}
+              <div className={`border rounded-xl p-4 mb-4 ${isWarranty ? "border-violet-300 bg-violet-50" : "border-gray-200 bg-gray-50/50"}`}>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={isWarranty} onChange={e => toggleWarranty(e.target.checked)}
+                    className="w-4 h-4 text-violet-600 rounded" />
+                  <span className="text-sm font-medium text-violet-800">🛡 Gewährleistung – nicht berechnen</span>
+                </label>
+                {isWarranty && (
+                  <p className="text-xs text-violet-700 mt-2 leading-relaxed">
+                    Alle Positionen sind gesperrt (0,00 €), es wird keine Anfahrt gezählt. Der Auftrag erscheint in der
+                    Excel-Abrechnung mit Status „Gewährleistung“ und deiner Bemerkung, aber ohne „1“.
+                    Bitte den Grund in „Bemerkung / Mehraufwand“ ergänzen.
+                  </p>
+                )}
+              </div>
+
               {/* ─── Objektvermerk ─── */}
               <div className="border border-blue-200 rounded-xl p-4 bg-blue-50/50 mb-4">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -511,7 +550,7 @@ function OrdersContent() {
                 className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
               >
                 <FileCheck2 className="w-5 h-5" />
-                Jetzt abrechnen & Speichern
+                {isWarranty ? "Als Gewährleistung speichern" : "Jetzt abrechnen & Speichern"}
               </button>
             </div>
           </div>
@@ -550,6 +589,7 @@ function OrdersContent() {
               <option value="Termin vereinbart">Termin vereinbart</option>
               <option value="Erfolgreich abgeschlossen">Erfolgreich abgeschlossen</option>
               <option value="Abbruch">Abbruch</option>
+              <option value="Gewährleistung">Gewährleistung</option>
               <option value="Storno HTP">Storno HTP</option>
             </select>
           </div>
@@ -631,6 +671,7 @@ function OrdersContent() {
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         order.status === "Erfolgreich abgeschlossen" ? "bg-green-100 text-green-800" :
+                        order.status === "Gewährleistung" ? "bg-violet-100 text-violet-800" :
                         order.status === "Storniert" || order.status === "Storno HTP" || order.status === "Abbruch" ? "bg-red-100 text-red-800" :
                         "bg-blue-100 text-blue-800"
                       }`}>
@@ -640,6 +681,8 @@ function OrdersContent() {
                     <td className="px-6 py-4">
                       {order.status === "Storno HTP" || order.status === "Storniert" ? (
                           <span className="text-red-500 font-bold flex items-center gap-1 text-sm bg-red-50 px-2 py-1 rounded-md w-fit"><X className="w-4 h-4" /> STORNO</span>
+                        ) : order.status === "Gewährleistung" ? (
+                          <button onClick={() => openBilling(order)} className="text-violet-700 font-bold flex items-center gap-1 hover:bg-violet-50 p-1.5 rounded transition-colors cursor-pointer text-sm" title="Gewährleistung – nicht berechnet. Klicken zum Bearbeiten.">🛡 GEWÄHRLEISTUNG</button>
                         ) : order.isBilled ? (
                           <button onClick={() => openBilling(order)} className="text-green-600 font-bold flex items-center gap-1 hover:text-green-700 hover:bg-green-50 p-1.5 rounded transition-colors cursor-pointer" title="Abrechnung bearbeiten"><CheckCircle2 className="w-4 h-4" /> BERECHNET</button>
                         ) : (

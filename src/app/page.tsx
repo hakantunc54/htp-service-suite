@@ -1,7 +1,7 @@
 import { getTerminabsprachen } from "./terminabsprachen/actions";
 import RevenueChart from '@/components/RevenueChart';
 ﻿import { PrismaClient } from "@prisma/client";
-import { FileText, CalendarCheck, PhoneCall, Euro, Wallet } from "lucide-react";
+import { FileText, CalendarCheck, PhoneCall, Euro, Wallet, ShieldCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +38,13 @@ export default async function Home() {
 
   let closedValue = billedData._sum.orderValue || 0;
 
+  // Gewährleistungen im laufenden Monat (Qualitätskennzahl)
+  const nowBerlin = new Date();
+  const startOfMonth = new Date(nowBerlin.getFullYear(), nowBerlin.getMonth(), 1);
+  const warrantyThisMonth = await prisma.order.count({
+    where: { status: "Gewährleistung", kundenTerminStart: { gte: startOfMonth } }
+  });
+
   
   // All completed orders for the chart
   const allBilledOrders = await prisma.order.findMany({
@@ -45,6 +52,7 @@ export default async function Home() {
     select: { 
       orderValue: true, 
       orderType: true, 
+      status: true,
       kundenTerminStart: true, 
       updatedAt: true, 
       vosNumber: true, 
@@ -103,6 +111,9 @@ export default async function Home() {
     
     const groupKey = `${dateStr}_${o.vehicle || 'Pool'}`;
     
+    // Gewährleistungen lösen keine Anfahrt aus und zählen nicht zur 12er-Grenze
+    if (o.status === "Gewährleistung") return;
+
     if (type === "FTTB") {
       if (!anfahrtGroups.FTTB[groupKey]) anfahrtGroups.FTTB[groupKey] = { dateStr, count: 0 };
       anfahrtGroups.FTTB[groupKey].count += 1;
@@ -187,7 +198,7 @@ export default async function Home() {
           <RevenueChart data={chartData} />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4 border-l-4 border-l-orange-500">
             <div className="bg-orange-50 p-4 rounded-full text-orange-500">
@@ -206,6 +217,16 @@ export default async function Home() {
           <div>
             <h3 className="text-gray-500 font-medium text-sm">Abgerechneter Umsatz (Gesamt)</h3>
             <p className="text-3xl font-bold mt-1 text-emerald-600">{formatEuro(closedValue)}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4 border-l-4 border-l-violet-500">
+          <div className="bg-violet-50 p-4 rounded-full text-violet-600">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="text-gray-500 font-medium text-sm">Gewährleistungen (dieser Monat)</h3>
+            <p className="text-3xl font-bold mt-1 text-violet-600">{warrantyThisMonth}</p>
           </div>
         </div>
 

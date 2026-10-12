@@ -114,11 +114,15 @@ export async function GET(request: Request) {
 
     const fttbRows = [];
     for (const [key, groupOrders] of Object.entries(fttbGroups)) {
-      const count = groupOrders.length;
-      let isFirst = true;
+      // Gewährleistungen zählen weder für die 12er-Grenze noch bekommen sie die Anfahrt
+      const count = groupOrders.filter((o: any) => o.status !== "Gewährleistung").length;
+      let anfahrtVergeben = false;
 
       for (const order of groupOrders) {
         const addr = parseAddress(order.customer.address);
+        const isWarranty = order.status === "Gewährleistung";
+        const getsAnfahrt = !anfahrtVergeben && !isWarranty;
+        if (getsAnfahrt) anfahrtVergeben = true;
         
         // Finde ServiceItems
         const getQty = (name: string) => {
@@ -142,13 +146,13 @@ export async function GET(request: Request) {
           "Kunde Name": order.customer.customerName,
           "Kunden\nNummer": order.customer.customerNumber,
           "Kunde RufNr": order.customer.phone || order.customer.mobile,
-          "Status": (Number(getQty("Abbruch")) > 0 || Number(getQty("KvHdF")) > 0) ? "Abbruch" : "Erledigt",
+          "Status": isWarranty ? "Gewährleistung" : (Number(getQty("Abbruch")) > 0 || Number(getQty("KvHdF")) > 0) ? "Abbruch" : "Erledigt",
           "Bemerkung": order.technicianRemark || "",
           "WE\nLage": order.apartmentLocation || "",
           "FTTB": getQty("FTTB"),
           "Abbruch": getQty("Abbruch"),
-          "Anfahrt >12": isFirst && count >= 12 ? 1 : "",
-          "Anfahrt\n<12": isFirst && count < 12 ? 1 : "",
+          "Anfahrt >12": getsAnfahrt && count >= 12 ? 1 : "",
+          "Anfahrt\n<12": getsAnfahrt && count < 12 ? 1 : "",
           "MAW (5Min)": getQty("MAW (5Min)"),
           "PCI": getQty("PCI"),
           "vLauiAPLe": getQty("vLauiAPLe"),
@@ -161,7 +165,6 @@ export async function GET(request: Request) {
         };
 
         fttbRows.push(row);
-        isFirst = false;
       }
     }
 
@@ -177,10 +180,13 @@ export async function GET(request: Request) {
 
     const bdeRows = [];
     for (const [key, groupOrders] of Object.entries(bdeGroups)) {
-      let isFirst = true;
+      let anfahrtVergeben = false;
 
       for (const order of groupOrders) {
         const addr = parseAddress(order.customer.address);
+        const isWarranty = order.status === "Gewährleistung";
+        const getsAnfahrt = !anfahrtVergeben && !isWarranty;
+        if (getsAnfahrt) anfahrtVergeben = true;
         
         const getQty = (name: string) => {
           const item = order.services.find((si: any) => si.serviceItem.name === name);
@@ -203,18 +209,17 @@ export async function GET(request: Request) {
           "Kunde Name": order.customer.customerName,
           "Kunden\nNummer": order.customer.customerNumber,
           "Kunde RufNr": order.customer.phone || order.customer.mobile,
-          "Status": order.bdeStatus || "Erledigt",
+          "Status": isWarranty ? "Gewährleistung" : (order.bdeStatus || "Erledigt"),
             "Bemerkung": order.technicianRemark || "",
             "WE\nLage": order.apartmentLocation || "",
-            "Stunden / Material": order.materialDetails || "",
+            "Stunden / Material": isWarranty ? "" : (order.materialDetails || ""),
           "Arbeitszeit": getQty("Arbeitszeit (Std.)"),
-          "Anfahrt": isFirst ? 1 : "",
+          "Anfahrt": getsAnfahrt ? 1 : "",
           "Material": getAmount("Material (BDE)"),
           "optional": getAmount("Optional (BDE)")
         };
 
         bdeRows.push(row);
-        isFirst = false;
       }
     }
 

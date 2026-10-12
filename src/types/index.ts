@@ -32,8 +32,12 @@ export enum OrderStatus {
   STORNIERT = "Storniert",
   ABGERECHNET = "Abgerechnet",
   ARCHIVIERT = "Archiviert",
-  WARTET_AUF_HTP = "Wartet auf HTP"
+  WARTET_AUF_HTP = "Wartet auf HTP",
+  GEWAEHRLEISTUNG = "Gewährleistung"
 }
+
+/** Gewährleistung = Nachbesserung, wird nicht berechnet (0 €, keine Anfahrt) */
+export const WARRANTY_STATUS = "Gewährleistung";
 
 export enum CommunicationStatus {
   NOCH_NICHT = "Noch nicht angerufen",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getOrdersForPlanning, assignVehicleToOrder, deleteOrder, updateOrderType } from "./actions";
 import { Vehicle, ORDER_TYPES, isKnownOrderType } from "@/types";
 import { Calendar, Download, Map, CarFront, Trash2, AlertTriangle, X } from "lucide-react";
@@ -302,6 +302,41 @@ export default function PlanningPage() {
   };
   const vehicleOptionsFor = (o: OrderData) => vehicles.filter(v => isBdeOrder(o) ? v.startsWith('T') : v.startsWith('Auto'));
 
+  // ─── Tagestrennung ───
+  const berlinDayKey = (d: Date | string) => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }); // YYYY-MM-DD
+  const todayKey = berlinDayKey(new Date());
+  const tomorrowKey = berlinDayKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
+
+  const dayLabel = (key: string) => {
+    if (key === 'none') return 'Ohne Termin';
+    const d = new Date(key + 'T12:00:00');
+    const text = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (key === todayKey) return 'Heute · ' + text;
+    if (key === tomorrowKey) return 'Morgen · ' + text;
+    return text;
+  };
+
+  // Gruppiert Aufträge nach Tag (aufsteigend, "Ohne Termin" zuletzt)
+  // Hinweis: "Map" ist in dieser Datei das lucide-Icon, daher einfaches Objekt statt JS-Map
+  const groupByDay = (list: OrderData[]) => {
+    const groups: Record<string, OrderData[]> = {};
+    list.forEach(o => {
+      const key = o.kundenTerminStart ? berlinDayKey(o.kundenTerminStart) : 'none';
+      (groups[key] = groups[key] || []).push(o);
+    });
+    return Object.keys(groups)
+      .sort((a, b) => (a === 'none' ? 1 : b === 'none' ? -1 : a.localeCompare(b)))
+      .map(key => ({ key, label: dayLabel(key), items: groups[key] }));
+  };
+
+  const renderDayHeader = (key: string, label: string, count: number, extraClass = '') => (
+    <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wide pt-1 ${key === todayKey ? 'text-blue-700' : key === tomorrowKey ? 'text-emerald-700' : key === 'none' ? 'text-gray-400' : 'text-slate-500'} ${extraClass}`}>
+      <span>{label}</span>
+      <span className="font-medium normal-case text-gray-400">({count})</span>
+      <div className="flex-1 border-t border-gray-200"></div>
+    </div>
+  );
+
   // Auftragskarte (im Pool oder in einem Fahrzeug)
   const renderOrderCard = (order: OrderData, inPool: boolean) => (
     <div key={order.id} className={`border ${inPool ? 'border-gray-200' : 'border-blue-100'} p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow group relative`}>
@@ -323,17 +358,7 @@ export default function PlanningPage() {
       <div className="text-xs text-gray-600 mb-2 truncate">{order.customer.address}</div>
       {renderSiteWarnings(order)}
 
-      {/* Termin Badge (falls vorhanden) */}
-      {order.kundenTerminStart ? (
-        <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 mb-3 w-max">
-          <Calendar className="w-3 h-3" />
-          <span className="font-medium">
-            Fixtermin: {new Date(order.kundenTerminStart).toLocaleDateString('de-DE')} - {new Date(order.kundenTerminStart).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-      ) : (
-        <div className="mb-3"></div>
-      )}
+      <div className="mb-3"></div>
 
       <select
         className={inPool
@@ -354,6 +379,20 @@ export default function PlanningPage() {
   // Fahrzeug-Box (Auto 1-3 / T1-T4) mit eigenem xRoute-Export
   const renderVehicleBox = (vehicle: string) => {
     const vehicleOrders = orders.filter(o => o.vehicle === vehicle);
+
+    // Leeres Fahrzeug: schmale, dezente Zeile statt großer Box
+    if (vehicleOrders.length === 0) {
+      return (
+        <div key={vehicle} className="bg-gray-50/70 rounded-xl border border-dashed border-gray-200 px-4 py-3 flex items-center justify-between min-w-0 opacity-70">
+          <h2 className="font-semibold flex items-center gap-2 text-gray-500">
+            <CarFront className="w-4 h-4" />
+            {vehicle}
+          </h2>
+          <span className="text-xs text-gray-400">keine Aufträge</span>
+        </div>
+      );
+    }
+
     return (
       <div key={vehicle} className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col min-w-0">
         <div className="p-4 border-b border-gray-100 bg-blue-50/50 rounded-t-xl flex justify-between items-center">
@@ -367,10 +406,12 @@ export default function PlanningPage() {
         </div>
 
         <div className="p-4 flex-1 flex flex-col gap-3 min-h-[110px]">
-          {vehicleOrders.map(order => renderOrderCard(order, false))}
-          {vehicleOrders.length === 0 && (
-            <div className="text-center text-sm text-gray-400 mt-4">Keine Aufträge geplant.</div>
-          )}
+          {groupByDay(vehicleOrders).map(group => (
+            <div key={group.key} className="flex flex-col gap-3">
+              {renderDayHeader(group.key, group.label, group.items.length)}
+              {group.items.map(order => renderOrderCard(order, false))}
+            </div>
+          ))}
         </div>
 
         <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
@@ -475,7 +516,12 @@ export default function PlanningPage() {
         </div>
         {unassignedOrders.length > 0 && (
           <div className="p-4 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {unassignedOrders.map(order => renderOrderCard(order, true))}
+            {groupByDay(unassignedOrders).map(group => (
+              <React.Fragment key={group.key}>
+                {renderDayHeader(group.key, group.label, group.items.length, 'col-span-full')}
+                {group.items.map(order => renderOrderCard(order, true))}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </section>

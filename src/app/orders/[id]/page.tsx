@@ -102,12 +102,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const handleCloneOrder = async () => {
     if (!order) return;
-    const confirm = window.confirm("Möchtest du diesen Auftrag abschließen und einen Klon für HTP erstellen?");
+    const confirm = window.confirm("Diesen Auftrag als ABBRUCH markieren und einen Folgeauftrag (Klon) für die 2. Anfahrt erstellen?");
     if (!confirm) return;
     
     setIsCloning(true);
     try {
-      await updateOrderStatus(order.id, "Erfolgreich abgeschlossen", order.communicationStatus);
       const res = await cloneOrder(order.id);
       if (res.success) {
         toast.success("Folgeauftrag (Klon) erfolgreich erstellt!");
@@ -274,7 +273,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </button>
           </div>
 
-          {order.status !== "Erfolgreich abgeschlossen" && order.status !== "Storniert" && order.status !== "Abgerechnet" && (
+          {!order.isBilled && !["Erfolgreich abgeschlossen", "Storniert", "Abgerechnet", "Abbruch", "Gewährleistung", "Storno HTP"].includes(order.status) && (
             <>
               <h3 className="text-sm font-bold text-gray-800 mb-3">Status Updates (Quick Actions)</h3>
               <div className="flex flex-col gap-2 mb-8">

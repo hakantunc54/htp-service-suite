@@ -143,6 +143,26 @@ export async function cloneOrder(orderId: string) {
 
   if (!originalOrder) throw new Error("Order not found");
 
+  const isBde = (originalOrder.orderType || "").toLowerCase().includes("bde")
+    || (originalOrder.orderType || "").toLowerCase().includes("endleitung")
+    || !!originalOrder.vosNumber;
+
+  // Original-Auftrag als ABBRUCH markieren (vorher fälschlich "Erfolgreich abgeschlossen")
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: "Abbruch",
+      ...(isBde && { bdeStatus: "Abbruch" }),
+    }
+  });
+  await prisma.historyEntry.create({
+    data: {
+      orderId,
+      type: "STATUS_CHANGE",
+      content: "Status geändert auf: Abbruch"
+    }
+  });
+
   const newOrder = await prisma.order.create({
     data: {
       customerId: originalOrder.customerId,
@@ -154,9 +174,12 @@ export async function cloneOrder(orderId: string) {
       orderType: originalOrder.orderType,
       htpRemark: originalOrder.htpRemark,
       apartmentLocation: originalOrder.apartmentLocation,
+      vosNumber: originalOrder.vosNumber,
+      broadbandTechnology: originalOrder.broadbandTechnology,
+      buildingId: originalOrder.buildingId,
       status: "Neu",
-      communicationStatus: "NOCH_NICHT",
-      technicianRemark: `Folgeauftrag aus vorherigem Abbruch am ${new Date().toLocaleDateString('de-DE')}`
+      communicationStatus: "Noch nicht angerufen",
+      technicianRemark: `Folgeauftrag aus vorherigem Abbruch am ${new Date().toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin' })}`
     }
   });
 

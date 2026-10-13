@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut, SessionProvider, useSession } from "next-auth/react";
 import { LayoutDashboard, Inbox, Calendar, Users, Calculator, Settings, Menu, Search, X, Bell, UserCircle, Building2 } from "lucide-react";
 import { Toaster } from "sonner";
+import { DialogProvider } from "./DialogProvider";
 
 
 
@@ -178,7 +179,9 @@ function ShellContent({ children }: { children: React.ReactNode }) {
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <ShellContent>{children}</ShellContent>
+      <DialogProvider>
+        <ShellContent>{children}</ShellContent>
+      </DialogProvider>
     </SessionProvider>
   );
 }

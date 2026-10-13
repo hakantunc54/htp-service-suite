@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useDialogs } from "@/components/DialogProvider";
 
 type BuildingData = NonNullable<Awaited<ReturnType<typeof getBuildingById>>>;
 type TabId = "general" | "tech" | "history" | "photos" | "notes";
@@ -45,6 +46,7 @@ const PHOTO_CATEGORIES = [
 export default function BuildingDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { confirm: confirmDialog } = useDialogs();
   const buildingId = params.id as string;
 
   const [building, setBuilding] = useState<BuildingData | null>(null);
@@ -177,7 +179,13 @@ export default function BuildingDetailPage() {
   };
 
   const handleDeletePhoto = async (photoId: string) => {
-    if (!confirm("Foto wirklich löschen?")) return;
+    const ok = await confirmDialog({
+      title: "Foto löschen?",
+      message: "Das Foto wird unwiderruflich aus der Objektakte gelöscht.",
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (!ok) return;
     await fetch("/api/building-photos", {
       method: "DELETE",
       body: JSON.stringify({ photoId }),

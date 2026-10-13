@@ -11,6 +11,7 @@ import { use } from "react";
 import { toast } from "sonner";
 import { EditServicesModal } from "@/components/EditServicesModal";
 import BuildingBanner from "@/components/BuildingBanner";
+import { useDialogs } from "@/components/DialogProvider";
 
 type OrderDetail = NonNullable<Awaited<ReturnType<typeof getOrderDetails>>>;
 type SmsTemplate = Awaited<ReturnType<typeof getSmsTemplates>>[0];
@@ -26,6 +27,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [manualSmsText, setManualSmsText] = useState("");
   const [showManualSmsModal, setShowManualSmsModal] = useState(false);
   const router = useRouter();
+  const { confirm, form } = useDialogs();
   const [isCloning, setIsCloning] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -102,8 +104,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const handleCloneOrder = async () => {
     if (!order) return;
-    const confirm = window.confirm("Diesen Auftrag als ABBRUCH markieren und einen Folgeauftrag (Klon) für die 2. Anfahrt erstellen?");
-    if (!confirm) return;
+    const ok = await confirm({
+      title: "Abbruch & Neu klonen",
+      message: "Dieser Auftrag wird als ABBRUCH markiert und ein Folgeauftrag (Klon) für die 2. Anfahrt in der Disposition erstellt.",
+      confirmLabel: "Abbrechen & klonen",
+      variant: "danger",
+    });
+    if (!ok) return;
     
     setIsCloning(true);
     try {
@@ -149,9 +156,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   Port: {order.port || "Fehlt"}
   <button 
     onClick={async () => {
-      const newPort = window.prompt("Bitte Port eingeben:", order.port || "");
-      if (newPort !== null) {
-        await fetch(`/api/orders/${order.id}/port`, { method: 'POST', body: JSON.stringify({ port: newPort }) });
+      const result = await form({
+        title: "Port bearbeiten",
+        fields: [{ name: "port", label: "Port", value: order.port || "", placeholder: "z.B. CR0001207E/E1/01/01" }],
+      });
+      if (result) {
+        await fetch(`/api/orders/${order.id}/port`, { method: 'POST', body: JSON.stringify({ port: result.port }) });
         window.location.reload();
       }
     }}
@@ -175,16 +185,19 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
             <button 
               onClick={async () => {
-                const newAddress = window.prompt("Neue Adresse:", order.customer.address || "");
-                if (newAddress !== null) {
-                  const newPhone = window.prompt("Neue Telefonnummer:", order.customer.phone || "");
-                  if (newPhone !== null) {
-                    await fetch(`/api/customer/${order.customer.id}`, { 
-                      method: 'POST', 
-                      body: JSON.stringify({ address: newAddress, phone: newPhone, orderId: order.id }) 
-                    });
-                    window.location.reload();
-                  }
+                const result = await form({
+                  title: "Anschlussadresse bearbeiten",
+                  fields: [
+                    { name: "address", label: "Adresse", value: order.customer.address || "", placeholder: "Straße Nr, PLZ Ort" },
+                    { name: "phone", label: "Telefonnummer", value: order.customer.phone || "" },
+                  ],
+                });
+                if (result) {
+                  await fetch(`/api/customer/${order.customer.id}`, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ address: result.address, phone: result.phone, orderId: order.id }) 
+                  });
+                  window.location.reload();
                 }
               }}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium underline"
@@ -207,13 +220,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             
             <button 
               onClick={async () => {
-                const newLage = window.prompt("Neue WE-Lage / Wohnung:", order.apartmentLocation || "");
-                if (newLage !== null) {
-                  const newRemark = window.prompt("Neue Bemerkung:", order.technicianRemark || "");
-                  if (newRemark !== null) {
-                    await updateOrderDetailsText(order.id, newLage, newRemark);
-                    toast.success("Details gespeichert");
-                  }
+                const result = await form({
+                  title: "WE-Lage & Bemerkung bearbeiten",
+                  fields: [
+                    { name: "lage", label: "WE-Lage / Wohnung", value: order.apartmentLocation || "", placeholder: "z.B. 2. OG links" },
+                    { name: "remark", label: "Bemerkung", value: order.technicianRemark || "", multiline: true },
+                  ],
+                });
+                if (result) {
+                  await updateOrderDetailsText(order.id, result.lage, result.remark);
+                  toast.success("Details gespeichert");
+                  fetchData();
                 }
               }}
               className="text-amber-700 hover:text-amber-900 text-sm font-medium flex items-center gap-1 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded transition-colors"

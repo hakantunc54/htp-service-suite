@@ -296,8 +296,99 @@ export default function PlanningPage() {
     );
   };
 
+  const isBdeOrder = (o: OrderData) => {
+    const t = (o.orderType || '').toLowerCase();
+    return t.includes('bde') || t.includes('endleitung') || !!o.vosNumber;
+  };
+  const vehicleOptionsFor = (o: OrderData) => vehicles.filter(v => isBdeOrder(o) ? v.startsWith('T') : v.startsWith('Auto'));
+
+  // Auftragskarte (im Pool oder in einem Fahrzeug)
+  const renderOrderCard = (order: OrderData, inPool: boolean) => (
+    <div key={order.id} className={`border ${inPool ? 'border-gray-200' : 'border-blue-100'} p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow group relative`}>
+
+      {/* Header: Typ & Delete Button */}
+      <div className="flex justify-between items-start mb-2">
+        {renderTypeBadge(order)}
+        <button
+          onClick={() => setOrderToDelete(order.id)}
+          className="text-gray-400 hover:text-red-500 transition-colors p-1"
+          title="Auftrag löschen"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Kunde & Adresse */}
+      <div className="font-medium text-sm text-blue-900 mb-0.5">{order.customer.customerName}</div>
+      <div className="text-xs text-gray-600 mb-2 truncate">{order.customer.address}</div>
+      {renderSiteWarnings(order)}
+
+      {/* Termin Badge (falls vorhanden) */}
+      {order.kundenTerminStart ? (
+        <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 mb-3 w-max">
+          <Calendar className="w-3 h-3" />
+          <span className="font-medium">
+            Fixtermin: {new Date(order.kundenTerminStart).toLocaleDateString('de-DE')} - {new Date(order.kundenTerminStart).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+      ) : (
+        <div className="mb-3"></div>
+      )}
+
+      <select
+        className={inPool
+          ? "w-full text-sm border-gray-300 rounded bg-gray-50 p-1.5 focus:ring-blue-500 outline-none"
+          : "w-full text-sm border-blue-300 rounded bg-blue-50/50 p-1.5 focus:ring-blue-500 outline-none text-blue-800 font-medium"}
+        value={order.vehicle || ""}
+        onChange={(e) => handleAssign(order.id, e.target.value === "none" ? null : e.target.value)}
+      >
+        <option value="" disabled>Auto zuweisen...</option>
+        {!inPool && <option value="none">-- Zurück in Pool --</option>}
+        {vehicleOptionsFor(order).map(v => (
+          <option key={v} value={v}>{v}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  // Fahrzeug-Box (Auto 1-3 / T1-T4) mit eigenem xRoute-Export
+  const renderVehicleBox = (vehicle: string) => {
+    const vehicleOrders = orders.filter(o => o.vehicle === vehicle);
+    return (
+      <div key={vehicle} className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col min-w-0">
+        <div className="p-4 border-b border-gray-100 bg-blue-50/50 rounded-t-xl flex justify-between items-center">
+          <h2 className="font-semibold text-lg flex items-center gap-2 text-blue-900">
+            <CarFront className="w-5 h-5" />
+            {vehicle}
+          </h2>
+          <span className="bg-blue-100 text-blue-800 text-sm py-1 px-3 rounded-full font-medium">
+            {vehicleOrders.length}
+          </span>
+        </div>
+
+        <div className="p-4 flex-1 flex flex-col gap-3 min-h-[110px]">
+          {vehicleOrders.map(order => renderOrderCard(order, false))}
+          {vehicleOrders.length === 0 && (
+            <div className="text-center text-sm text-gray-400 mt-4">Keine Aufträge geplant.</div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+          <button
+            onClick={() => handleExportClick(vehicle)}
+            disabled={vehicleOrders.length === 0}
+            className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Map className="w-4 h-4" />
+            xRoute Export (CSV)
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="p-8 max-w-7xl mx-auto h-full flex flex-col relative">
+    <div className="p-8 max-w-[1800px] mx-auto min-h-full flex flex-col relative">
       
       {/* Delete Confirmation Modal */}
       {orderToDelete && (
@@ -371,149 +462,40 @@ export default function PlanningPage() {
         </details>
       )}
 
-      <div className="flex-1 flex overflow-x-auto gap-6 min-h-0 pb-4">
-        
-        {/* Pool: Unzugewiesen */}
-        <div className="w-[320px] shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
-          <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-            <h2 className="font-semibold text-lg flex items-center justify-between">
-              Offener Pool
-              <span className="bg-gray-200 text-gray-700 text-sm py-1 px-3 rounded-full">
-                {unassignedOrders.length}
-              </span>
-            </h2>
-          </div>
-          <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-3">
-            {unassignedOrders.map(order => (
-              <div key={order.id} className="border border-gray-200 p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow group relative">
-                
-                {/* Header: Typ & Delete Button */}
-                <div className="flex justify-between items-start mb-2">
-                  {renderTypeBadge(order)}
-                  <button 
-                    onClick={() => setOrderToDelete(order.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                    title="Auftrag löschen"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {/* Kunde & Adresse */}
-                <div className="font-medium text-sm text-blue-900 mb-0.5">{order.customer.customerName}</div>
-                <div className="text-xs text-gray-600 mb-2 truncate">{order.customer.address}</div>
-                {renderSiteWarnings(order)}
-                
-                {/* Termin Badge (falls vorhanden) */}
-                {order.kundenTerminStart && (
-                  <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 mb-3 w-max">
-                    <Calendar className="w-3 h-3" />
-                    <span className="font-medium">
-                      Fixtermin: {new Date(order.kundenTerminStart).toLocaleDateString('de-DE')} - {new Date(order.kundenTerminStart).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                )}
-                {!order.kundenTerminStart && (
-                  <div className="mb-3"></div> // Spacer wenn kein Termin
-                )}
-                
-                <select 
-                  className="w-full text-sm border-gray-300 rounded bg-gray-50 p-1.5 focus:ring-blue-500 outline-none"
-                  value={order.vehicle || ""}
-                  onChange={(e) => handleAssign(order.id, e.target.value)}
-                >
-                  <option value="" disabled>Auto zuweisen...</option>
-                  {vehicles.filter(v => ((order.orderType || '').toLowerCase().includes('bde') || (order.orderType || '').toLowerCase().includes('endleitung') || order.vosNumber) ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-            {unassignedOrders.length === 0 && (
-              <div className="text-center text-sm text-gray-400 mt-10">Keine unzugewiesenen Aufträge.</div>
-            )}
-          </div>
+      {/* ─── 1. Offener Pool (Box über die volle Breite) ─── */}
+      <section className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className={`px-4 py-3 bg-gray-50 rounded-t-xl flex items-center gap-3 ${unassignedOrders.length > 0 ? 'border-b border-gray-100' : 'rounded-b-xl'}`}>
+          <h2 className="font-semibold text-lg">Offener Pool</h2>
+          <span className={`text-sm py-0.5 px-3 rounded-full ${unassignedOrders.length > 0 ? 'bg-amber-200 text-amber-900 font-semibold' : 'bg-gray-200 text-gray-700'}`}>
+            {unassignedOrders.length}
+          </span>
+          {unassignedOrders.length === 0 && (
+            <span className="text-sm text-gray-400">Keine unzugewiesenen Aufträge.</span>
+          )}
         </div>
+        {unassignedOrders.length > 0 && (
+          <div className="p-4 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {unassignedOrders.map(order => renderOrderCard(order, true))}
+          </div>
+        )}
+      </section>
 
-        {/* Fahrzeuge */}
-        {vehicles.map(vehicle => {
-          const vehicleOrders = orders.filter(o => o.vehicle === vehicle);
-          return (
-            <div key={vehicle} className="w-[320px] shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
-              <div className="p-4 border-b border-gray-100 bg-blue-50/50 rounded-t-xl flex justify-between items-center">
-                <h2 className="font-semibold text-lg flex items-center gap-2 text-blue-900">
-                  <CarFront className="w-5 h-5" />
-                  {vehicle}
-                </h2>
-                <span className="bg-blue-100 text-blue-800 text-sm py-1 px-3 rounded-full font-medium">
-                  {vehicleOrders.length}
-                </span>
-              </div>
-              
-              <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-3">
-                {vehicleOrders.map(order => (
-                  <div key={order.id} className="border border-blue-100 p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow group relative">
-                    
-                    <div className="flex justify-between items-start mb-2">
-                      {renderTypeBadge(order)}
-                      <button 
-                        onClick={() => setOrderToDelete(order.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                        title="Auftrag löschen"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+      {/* ─── 2. FTTB-Flotte: Auto 1 – Auto 3 nebeneinander ─── */}
+      <section className="mb-8">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">FTTB-Flotte</h2>
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 items-start">
+          {vehicles.filter(v => v.startsWith('Auto')).map(v => renderVehicleBox(v))}
+        </div>
+      </section>
 
-                    <div className="font-medium text-sm text-blue-900 mb-0.5">{order.customer.customerName}</div>
-                    <div className="text-xs text-gray-600 mb-2 truncate">{order.customer.address}</div>
-                {renderSiteWarnings(order)}
-                    
-                    {order.kundenTerminStart && (
-                      <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 mb-3 w-max">
-                        <Calendar className="w-3 h-3" />
-                        <span className="font-medium">
-                          Fixtermin: {new Date(order.kundenTerminStart).toLocaleDateString('de-DE')} - {new Date(order.kundenTerminStart).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    )}
-                    {!order.kundenTerminStart && (
-                      <div className="mb-3"></div>
-                    )}
+      {/* ─── 3. BdE-Techniker: T1 – T4 nebeneinander ─── */}
+      <section className="mb-8">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">BdE-Techniker (Bau der Endleitung)</h2>
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 items-start">
+          {vehicles.filter(v => v.startsWith('T')).map(v => renderVehicleBox(v))}
+        </div>
+      </section>
 
-                    <select 
-                      className="w-full text-sm border-blue-300 rounded bg-blue-50/50 p-1.5 focus:ring-blue-500 outline-none text-blue-800 font-medium"
-                      value={order.vehicle || ""}
-                      onChange={(e) => handleAssign(order.id, e.target.value === "none" ? null : e.target.value)}
-                    >
-                      <option value="" disabled>Auto zuweisen...</option>
-                      <option value="none">-- Zurück in Pool --</option>
-                      {vehicles.filter(v => ((order.orderType || '').toLowerCase().includes('bde') || (order.orderType || '').toLowerCase().includes('endleitung') || order.vosNumber) ? v.startsWith('T') : v.startsWith('Auto')).map(v => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-                {vehicleOrders.length === 0 && (
-                  <div className="text-center text-sm text-gray-400 mt-10">Keine Aufträge geplant.</div>
-                )}
-              </div>
-              
-              <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
-                <button 
-                  onClick={() => handleExportClick(vehicle)}
-                  disabled={vehicleOrders.length === 0}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Map className="w-4 h-4" />
-                  xRoute Export (CSV)
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    
       {/* Export Confirmation Modal */}
       {showExportModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
